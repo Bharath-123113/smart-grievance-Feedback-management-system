@@ -1,0 +1,841 @@
+/******************************
+  BASE WRAPPER (VERY IMPORTANT)
+******************************/
+.dept-dashboard {
+  font-family: Arial, sans-serif;
+  background: #f4f6f9;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  position: relative;
+}
+
+/***********************************
+  DASHBOARD CONTAINER
+***********************************/
+.dept-dashboard .dashboard-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/***********************************
+            HEADER (FIXED)
+***********************************/
+.dept-dashboard .dashboard-header {
+  background: #4a90e2;
+  padding: 12px 20px;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  height: 60px;
+}
+
+/* Left section with hamburger and title */
+.dept-dashboard .header-left {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+.dept-dashboard .header-left h1 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: bold;
+}
+
+.dept-dashboard .user-role {
+  font-size: 12px;
+  opacity: 0.9;
+  margin-left: 10px;
+  background: rgba(255,255,255,0.2);
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+/* Right side */
+.dept-dashboard .header-right {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+}
+
+.dept-dashboard .logout-btn {
+  background: #ff4b5c;
+  border: none;
+  padding: 7px 12px;
+  border-radius: 4px;
+  color: white;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.3s;
+}
+
+.dept-dashboard .logout-btn:hover {
+  background: #e03e4d;
+}
+
+/***********************************
+          HAMBURGER BUTTON (FIXED)
+***********************************/
+.dept-dashboard .hamburger-btn {
+  width: 30px;
+  height: 25px;
+  display: flex !important;
+  flex-direction: column;
+  justify-content: space-between;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  margin-right: 15px;
+  padding: 0;
+  position: relative;
+  z-index: 1001;
+}
+
+.dept-dashboard .hamburger-btn span {
+  height: 3px;
+  width: 100%;
+  background: white;
+  border-radius: 3px;
+  transition: all 0.3s ease;
+  display: block;
+  transform-origin: center;
+}
+
+/* Hamburger animation when open */
+.dept-dashboard .hamburger-btn.open span:nth-child(1) {
+  transform: rotate(45deg) translate(6px, 6px);
+}
+
+.dept-dashboard .hamburger-btn.open span:nth-child(2) {
+  opacity: 0;
+  transform: scale(0);
+}
+
+.dept-dashboard .hamburger-btn.open span:nth-child(3) {
+  transform: rotate(-45deg) translate(6px, -6px);
+}
+
+/***********************************
+          SIDEBAR + OVERLAY (FIXED Z-INDEX)
+***********************************/
+.dept-dashboard .sidebar-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: none;
+  z-index: 1998; /* Below sidebar but above everything else */
+}
+
+.dept-dashboard .sidebar-overlay.visible {
+  display: block;
+}
+
+.dept-dashboard .sidebar {
+  width: 280px;
+  background: #ffffff;
+  height: 100vh;
+  position: fixed;
+  top: 0;
+  left: -300px;
+  padding: 80px 15px 20px 15px; /* Increased top padding for header */
+  box-shadow: 2px 0 15px rgba(0,0,0,0.3);
+  transition: 0.3s ease;
+  z-index: 1999; /* Higher than overlay */
+  overflow-y: auto;
+}
+
+.dept-dashboard .sidebar.open {
+  left: 0;
+}
+
+.dept-dashboard .sidebar-menu h4 {
+  margin: 20px 12px 10px 12px;
+  color: #4a90e2;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.dept-dashboard .menu-item {
+  padding: 12px 15px;
+  margin: 5px 0;
+  background: #f8fafc;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  border-left: 3px solid transparent;
+}
+
+.dept-dashboard .menu-item:hover {
+  background: #eef5ff;
+  border-left-color: #4a90e2;
+}
+
+.dept-dashboard .menu-item.active {
+  background: #4a90e2;
+  color: white;
+  border-left-color: #2c5aa0;
+}
+
+.dept-dashboard .badge {
+  background: #ff4b5c;
+  color: white;
+  padding: 2px 8px;
+  font-size: 11px;
+  border-radius: 12px;
+  margin-left: auto;
+  font-weight: bold;
+}
+
+/***********************************
+            MAIN CONTENT (FIXED MARGIN)
+***********************************/
+.dept-dashboard .dashboard-content {
+  display: flex;
+  flex: 1;
+  margin-top: 60px; /* Match header height */
+}
+
+.dept-dashboard .main-content {
+  flex: 1;
+  padding: 25px;
+  transition: margin-left 0.3s;
+  min-height: calc(100vh - 60px);
+}
+
+/***********************************
+          DASHBOARD VIEW
+***********************************/
+.dept-dashboard .welcome-section h1 {
+  margin-top: 0;
+  color: #333;
+  font-size: 28px;
+  margin-bottom: 8px;
+}
+
+.dept-dashboard .welcome-section p {
+  color: #666;
+  font-size: 16px;
+  margin-bottom: 20px;
+}
+
+.dept-dashboard .quick-actions {
+  display: flex;
+  gap: 15px;
+  margin: 25px 0;
+  flex-wrap: wrap;
+}
+
+.dept-dashboard .action-btn {
+  background: #4a90e2;
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dept-dashboard .action-btn:hover {
+  background: #3a7bc8;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.dept-dashboard .stats-grid {
+  margin-top: 30px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+}
+
+.dept-dashboard .stat-card {
+  background: white;
+  padding: 25px 20px;
+  border-radius: 10px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+  text-align: center;
+  transition: transform 0.3s;
+  border-top: 4px solid #4a90e2;
+}
+
+.dept-dashboard .stat-card:hover {
+  transform: translateY(-5px);
+}
+
+.dept-dashboard .stat-card h3 {
+  margin: 0;
+  font-size: 32px;
+  color: #4a90e2;
+  font-weight: bold;
+}
+
+.dept-dashboard .stat-card p {
+  margin: 8px 0 0 0;
+  color: #666;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/***********************************
+        GRIEVANCE LIST
+***********************************/
+.dept-dashboard .grievance-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.dept-dashboard .grievance-item {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  border-left: 4px solid #4a90e2;
+  transition: all 0.3s;
+}
+
+.dept-dashboard .grievance-item:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.dept-dashboard .grievance-item h3 {
+  margin: 0 0 8px 0;
+  color: #333;
+  font-size: 18px;
+}
+
+.dept-dashboard .grievance-item p {
+  margin: 0 0 12px 0;
+  color: #666;
+  line-height: 1.5;
+}
+
+.dept-dashboard .grievance-meta {
+  display: flex;
+  gap: 15px;
+  font-size: 12px;
+  color: #888;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.dept-dashboard .priority-high {
+  color: #ff4b5c;
+  font-weight: bold;
+}
+
+.dept-dashboard .priority-medium {
+  color: #ffa500;
+  font-weight: bold;
+}
+
+.dept-dashboard .priority-low {
+  color: #2ecc71;
+  font-weight: bold;
+}
+
+.dept-dashboard .btn-small {
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.3s;
+  margin-right: 8px;
+}
+
+.dept-dashboard .btn-primary {
+  background: #4a90e2;
+  color: white;
+}
+
+.dept-dashboard .btn-primary:hover {
+  background: #3a7bc8;
+}
+
+.dept-dashboard .btn-success {
+  background: #2ecc71;
+  color: white;
+}
+
+.dept-dashboard .btn-success:hover {
+  background: #27ae60;
+}
+
+.dept-dashboard .empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: #666;
+  font-size: 16px;
+}
+
+/***********************************
+        RESPONSIVE FIX
+***********************************/
+@media (max-width: 768px) {
+  .dept-dashboard .dashboard-header {
+    padding: 10px 15px;
+    height: 55px;
+  }
+
+  .dept-dashboard .dashboard-content {
+    margin-top: 55px;
+  }
+
+  .dept-dashboard .header-left h1 {
+    font-size: 18px;
+  }
+
+  .dept-dashboard .user-role {
+    font-size: 10px;
+    margin-left: 5px;
+  }
+
+  .dept-dashboard .main-content {
+    padding: 15px;
+  }
+
+  .dept-dashboard .stats-grid {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+
+  .dept-dashboard .quick-actions {
+    flex-direction: column;
+  }
+
+  .dept-dashboard .action-btn {
+    justify-content: center;
+  }
+
+  .dept-dashboard .sidebar {
+    width: 280px;
+    padding: 75px 15px 20px 15px;
+  }
+
+  .dept-dashboard .grievance-meta {
+    flex-direction: column;
+    gap: 5px;
+  }
+}
+
+@media (max-width: 480px) {
+  .dept-dashboard .header-right {
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-end;
+  }
+
+  .dept-dashboard .logout-btn {
+    padding: 5px 10px;
+    font-size: 12px;
+  }
+
+  .dept-dashboard .sidebar {
+    width: 85%;
+    left: -100%;
+  }
+}
+/***********************************
+        RECENT GRIEVANCES
+***********************************/
+.dept-dashboard .recent-grievances {
+  margin-top: 40px;
+}
+
+.dept-dashboard .recent-grievances h2 {
+  color: #333;
+  margin-bottom: 20px;
+  font-size: 22px;
+  border-bottom: 2px solid #4a90e2;
+  padding-bottom: 8px;
+}
+
+/***********************************
+        PAGINATION
+***********************************/
+.dept-dashboard .pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-top: 30px;
+  flex-wrap: wrap;
+}
+
+.dept-dashboard .pagination .btn-small {
+  background: #f0f0f0;
+  color: #333;
+  border: 1px solid #ddd;
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.dept-dashboard .pagination .btn-small:hover:not(:disabled) {
+  background: #e0e0e0;
+}
+
+.dept-dashboard .pagination .btn-small:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.dept-dashboard .pagination .btn-small.btn-primary {
+  background: #4a90e2;
+  color: white;
+  border-color: #4a90e2;
+}
+/* Grievance Details View */
+.grievance-details-view {
+  padding: 20px;
+}
+
+.details-header {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 30px;
+}
+
+.back-btn {
+  background: #6c757d;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.back-btn:hover {
+  background: #5a6268;
+}
+
+.grievance-detail-card {
+  background: white;
+  border-radius: 10px;
+  padding: 30px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.detail-section {
+  margin-bottom: 30px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.detail-section:last-child {
+  border-bottom: none;
+}
+
+.detail-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+  margin-top: 15px;
+}
+
+.detail-meta span {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+/* Status Styles */
+.status-new {
+  color: #ffc107;
+  font-weight: bold;
+}
+
+.status-in-progress {
+  color: #17a2b8;
+  font-weight: bold;
+}
+
+.status-resolved {
+  color: #28a745;
+  font-weight: bold;
+}
+
+.status-rejected {
+  color: #dc3545;
+  font-weight: bold;
+}
+
+/* Timeline */
+.timeline {
+  position: relative;
+  padding-left: 30px;
+}
+
+.timeline-item {
+  position: relative;
+  margin-bottom: 20px;
+}
+
+.timeline-marker {
+  position: absolute;
+  left: -30px;
+  top: 5px;
+  width: 12px;
+  height: 12px;
+  background: #4a90e2;
+  border-radius: 50%;
+  border: 3px solid white;
+  box-shadow: 0 0 0 2px #4a90e2;
+}
+
+.timeline-content {
+  background: #f8f9fa;
+  padding: 15px;
+  border-radius: 8px;
+  border-left: 4px solid #4a90e2;
+}
+
+.timeline-content strong {
+  color: #333;
+  display: block;
+  margin-bottom: 5px;
+}
+
+.timeline-content p {
+  margin: 5px 0;
+  color: #666;
+}
+
+.timeline-content small {
+  color: #999;
+  font-size: 12px;
+}
+
+/* Status Update Form */
+.status-update-form {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 8px;
+  border-left: 4px solid #4a90e2;
+}
+
+.status-select, .comment-textarea {
+  width: 100%;
+  padding: 10px;
+  border: 2px solid #e9ecef;
+  border-radius: 6px;
+  font-size: 14px;
+  margin-bottom: 15px;
+}
+
+.status-select:focus, .comment-textarea:focus {
+  outline: none;
+  border-color: #4a90e2;
+}
+
+.quick-actions-horizontal {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+  flex-wrap: wrap;
+}
+
+.btn-info {
+  background: #17a2b8;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.btn-info:hover {
+  background: #138496;
+}
+
+.btn-success {
+  background: #28a745;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.btn-success:hover {
+  background: #218838;
+}
+
+.btn-secondary {
+  background: #6c757d;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.btn-secondary:hover {
+  background: #5a6268;
+}
+
+/* Grievance Actions */
+.grievance-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+  flex-wrap: wrap;
+}
+
+/* Clickable Grievance Items */
+.grievance-item {
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.grievance-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+/* View Container Styles */
+.view-container {
+  padding: 20px;
+}
+
+.help-content, .profile-content {
+  max-width: 800px;
+}
+
+.help-section, .profile-section {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.faq-item {
+  margin-bottom: 15px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.faq-item:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.faq-item h4 {
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.faq-item p {
+  color: #666;
+  margin: 0;
+}
+
+/* Notifications */
+.notifications-list {
+  max-width: 600px;
+}
+
+.notification-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 15px;
+  padding: 15px;
+  background: white;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  border-left: 4px solid #e9ecef;
+}
+
+.notification-item.unread {
+  border-left-color: #4a90e2;
+  background: #f8f9fa;
+}
+
+.notification-icon {
+  font-size: 20px;
+  margin-top: 2px;
+}
+
+.notification-content {
+  flex: 1;
+}
+
+.notification-content h4 {
+  margin: 0 0 5px 0;
+  color: #333;
+}
+
+.notification-content p {
+  margin: 0 0 5px 0;
+  color: #666;
+}
+
+.notification-time {
+  color: #999;
+  font-size: 12px;
+}
+
+/* Profile Info */
+.profile-info p {
+  margin: 8px 0;
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.profile-info p:last-child {
+  border-bottom: none;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .grievance-detail-card {
+    padding: 20px;
+  }
+
+  .detail-meta {
+    grid-template-columns: 1fr;
+  }
+
+  .grievance-actions {
+    flex-direction: column;
+  }
+
+  .quick-actions-horizontal {
+    flex-direction: column;
+  }
+
+  .details-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

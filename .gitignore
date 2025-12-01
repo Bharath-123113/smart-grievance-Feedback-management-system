@@ -1,0 +1,10 @@
+node_modules/
+target/
+build/
+.idea/
+.vscode/
+*.iml
+
+backend/src/main/resources/application.properties
+frontend/.env
+ResolveIT/node_modules/

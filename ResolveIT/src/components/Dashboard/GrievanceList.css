@@ -1,0 +1,471 @@
+.grievance-list-card {
+  background: white;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.grievance-list-card h2 {
+  margin: 0 0 25px 0;
+  color: #1F2937;
+  font-size: 20px;
+}
+
+.grievance-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: #6B7280;
+}
+
+.grievance-item {
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.grievance-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+
+.grievance-header h3 {
+  margin: 0;
+  color: #1F2937;
+  font-size: 16px;
+}
+
+.status-badge {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.status-badge.submitted {
+  background: #FEF3C7;
+  color: #D97706;
+}
+
+.status-badge.in-progress {
+  background: #DBEAFE;
+  color: #1D4ED8;
+}
+
+.status-badge.resolved {
+  background: #D1FAE5;
+  color: #065F46;
+}
+
+.grievance-meta {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 10px;
+  font-size: 14px;
+}
+
+.category {
+  background: #F3F4F6;
+  padding: 4px 8px;
+  border-radius: 6px;
+  color: #6B7280;
+}
+
+.date {
+  color: #6B7280;
+}
+
+.grievance-details p {
+  margin: 0;
+  color: #6B7280;
+  font-size: 14px;
+}
+
+.grievance-footer {
+  display: flex;
+  gap: 15px;
+  font-size: 12px;
+  color: #6B7280;
+  margin-top: 10px;
+}
+/* Pagination Styles */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid #e2e8f0;
+  flex-wrap: wrap;
+}
+
+.pagination-btn {
+  padding: 8px 16px;
+  border: 1px solid #e2e8f0;
+  background: white;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  min-width: 80px;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background: #4F46E5;
+  color: white;
+  border-color: #4F46E5;
+}
+
+.pagination-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.page-number {
+  padding: 8px 12px;
+  border: 1px solid #e2e8f0;
+  background: white;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 14px;
+  min-width: 40px;
+  transition: all 0.3s ease;
+}
+
+.page-number:hover {
+  background: #f8fafc;
+  border-color: #4F46E5;
+}
+
+.page-number.active {
+  background: #4F46E5;
+  color: white;
+  border-color: #4F46E5;
+}
+
+.page-ellipsis {
+  padding: 8px 4px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+/* Responsive pagination */
+@media (max-width: 768px) {
+  .pagination {
+    gap: 4px;
+  }
+
+  .pagination-btn {
+    padding: 6px 12px;
+    font-size: 12px;
+    min-width: 70px;
+  }
+
+  .page-number {
+    padding: 6px 10px;
+    font-size: 12px;
+    min-width: 35px;
+  }
+}
+
+@media (max-width: 480px) {
+  .pagination {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .pagination-btn, .page-number {
+    width: 100%;
+    text-align: center;
+  }
+}
+/* Feedback Section Styles */
+.feedback-section {
+  margin: 15px 0;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border-left: 4px solid #4a90e2;
+}
+
+.feedback-btn {
+  background: #28a745;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.3s;
+}
+
+.feedback-btn:hover {
+  background: #218838;
+}
+
+.feedback-btn-action {
+  background: #17a2b8;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  margin-left: 8px;
+}
+
+.feedback-btn-action:hover {
+  background: #138496;
+}
+
+.feedback-given {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #28a745;
+  font-weight: 500;
+}
+
+.feedback-rating {
+  background: #d4edda;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-weight: bold;
+}
+
+.feedback-label {
+  color: #155724;
+}
+
+.feedback-comment-preview {
+  margin-top: 5px;
+  font-style: italic;
+  color: #6c757d;
+  font-size: 12px;
+}
+
+/* Compact view feedback */
+.feedback-compact {
+  font-size: 12px;
+  background: #e9ecef;
+  padding: 2px 6px;
+  border-radius: 8px;
+  color: #495057;
+}
+
+/* Pagination Styles */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+
+.pagination-btn {
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background: #e9ecef;
+}
+
+.pagination-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.page-number {
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  min-width: 40px;
+}
+
+.page-number.active {
+  background: #4a90e2;
+  color: white;
+  border-color: #4a90e2;
+}
+
+.page-number:hover:not(.active) {
+  background: #e9ecef;
+}
+
+.page-ellipsis {
+  padding: 8px 4px;
+  color: #6c757d;
+}
+
+/* Grievance Item Styles */
+.grievance-item {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 15px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  transition: box-shadow 0.3s;
+}
+
+.grievance-item:hover {
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.grievance-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+
+.grievance-title-section {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+}
+
+.grievance-title {
+  margin: 0;
+  color: #333;
+  font-size: 18px;
+}
+
+.grievance-status-icon {
+  font-size: 16px;
+}
+
+.status-badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.status-submitted { background: #fff3cd; color: #856404; }
+.status-under_review { background: #e2e3e5; color: #383d41; }
+.status-in-progress { background: #cce7ff; color: #004085; }
+.status-resolved { background: #d4edda; color: #155724; }
+.status-rejected { background: #f8d7da; color: #721c24; }
+
+.priority-badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  margin-left: 8px;
+}
+
+.priority-high { background: #f8d7da; color: #721c24; }
+.priority-medium { background: #fff3cd; color: #856404; }
+.priority-low { background: #d1ecf1; color: #0c5460; }
+
+.grievance-meta {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: #666;
+}
+
+.category-tag {
+  background: #e9ecef;
+  padding: 2px 8px;
+  border-radius: 10px;
+  color: #495057;
+}
+
+.grievance-description {
+  color: #666;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.grievance-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid #e9ecef;
+}
+
+.assignment-info {
+  display: flex;
+  gap: 15px;
+  font-size: 12px;
+  color: #666;
+}
+
+.view-details-btn, .edit-btn {
+  padding: 6px 12px;
+  border: 1px solid #4a90e2;
+  background: white;
+  color: #4a90e2;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  margin-left: 8px;
+}
+
+.view-details-btn:hover, .edit-btn:hover {
+  background: #4a90e2;
+  color: white;
+}
+
+/* Compact view styles */
+.grievance-list-compact .grievance-item {
+  padding: 15px;
+}
+
+.grievance-footer-compact {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+  font-size: 11px;
+  color: #666;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: #666;
+}
+
+.view-all-container {
+  text-align: center;
+  margin-top: 20px;
+}
+
+.view-all-btn {
+  background: none;
+  border: none;
+  color: #4a90e2;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.view-all-btn:hover {
+  text-decoration: underline;
+}
