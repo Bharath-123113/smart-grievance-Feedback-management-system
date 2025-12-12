@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './GrievanceForm.css';
+import { fileUploadApi } from '../../services/apiService';
 
-const GrievanceForm = ({ categories, user, onGrievanceSubmit, editGrievance = null }) => {
+const GrievanceForm = ({ categories, departments, user, onGrievanceSubmit, editGrievance = null }) => {
   // If editGrievance is provided, we're in edit mode
   const isEditMode = Boolean(editGrievance);
 
@@ -9,35 +10,54 @@ const GrievanceForm = ({ categories, user, onGrievanceSubmit, editGrievance = nu
     editGrievance ? {
       title: editGrievance.title,
       description: editGrievance.description,
-      category_id: editGrievance.category_id,
+      category_id: editGrievance.category_id || editGrievance.categoryId,
+      department_id: editGrievance.department_id || editGrievance.departmentId,
       priority: editGrievance.priority
-      // No department_id in form data - it comes from user profile
     } : {
       title: '',
       description: '',
       category_id: 1,
+      department_id: '',
       priority: 'medium'
-      // No department_id in form data - it comes from user profile
     }
   );
 
   const [attachments, setAttachments] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState({});
+
+  // Format categories for dropdown (handle both backend and frontend formats)
+  const getFormattedCategories = () => {
+    return categories.map(cat => ({
+      category_id: cat.id || cat.category_id,
+      category_name: cat.categoryName || cat.category_name || `Category ${cat.id || cat.category_id}`
+    }));
+  };
+
+  // Format departments for dropdown (handle both backend and frontend formats)
+  const getFormattedDepartments = () => {
+    return departments.map(dept => ({
+      department_id: dept.id || dept.department_id,
+      department_name: dept.departmentName || dept.department_name || `Department ${dept.id || dept.department_id}`
+    }));
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    if (!formData.title.trim() || !formData.description.trim()) {
-      alert('Please fill in all required fields');
+    if (!formData.title.trim() || !formData.description.trim() || !formData.department_id) {
+      alert('Please fill in all required fields including department');
       return;
     }
 
-    // Department comes from user profile, NOT form selection
-    // Include attachments in the grievance data
+    // Include department_id and real attachments in the grievance data
     onGrievanceSubmit({
       ...formData,
-      // No department selection - backend will use user.department automatically
-      attachments: attachments
+      attachments: attachments.map(att => ({
+        filePath: att.filePath,
+        fileName: att.name,
+        fileSize: att.size
+      }))
     });
 
     // Reset form only if it's not edit mode
@@ -46,9 +66,11 @@ const GrievanceForm = ({ categories, user, onGrievanceSubmit, editGrievance = nu
         title: '',
         description: '',
         category_id: 1,
+        department_id: '',
         priority: 'medium'
       });
       setAttachments([]);
+      setUploadProgress({});
     }
   };
 
@@ -59,30 +81,123 @@ const GrievanceForm = ({ categories, user, onGrievanceSubmit, editGrievance = nu
     });
   };
 
-  const handleFileUpload = (e) => {
+  const handleFileUpload = async (e) => {
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
 
+    // Check total files limit (max 5)
+    if (attachments.length + files.length > 5) {
+      alert('Maximum 5 files allowed. Please remove some files before adding more.');
+      e.target.value = '';
+      return;
+    }
+
     setIsUploading(true);
 
-    // Simulate file upload process
-    setTimeout(() => {
-      const newAttachments = files.map(file => ({
-        id: Date.now() + Math.random(),
-        name: file.name,
-        size: file.size,
-        type: file.type,
-        uploadedAt: new Date().toLocaleString()
-      }));
+    try {
+      // Upload each file sequentially to track progress
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        
+        // Check file size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+          alert(`File "${file.name}" exceeds 5MB limit. Please select a smaller file.`);
+          continue;
+        }
 
-      setAttachments(prev => [...prev, ...newAttachments]);
+        // Check file type
+        const validTypes = ['.pdf', '.jpg', '.jpeg', '.png', '.doc', '.docx', '.txt'];
+        const fileExtension = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+        if (!validTypes.includes(fileExtension)) {
+          alert(`File "${file.name}" has unsupported format. Allowed: PDF, JPG, PNG, DOC, TXT`);
+          continue;
+        }
+
+        // Update progress
+        setUploadProgress(prev => ({
+          ...prev,
+          [file.name]: 0
+        }));
+
+        // Simulate progress for better UX
+        const simulateProgress = () => {
+          let progress = 0;
+          const interval = setInterval(() => {
+            progress += 10;
+            if (progress >= 90) clearInterval(interval);
+            setUploadProgress(prev => ({
+              ...prev,
+              [file.name]: progress
+            }));
+          }, 100);
+          return interval;
+        };
+
+        const progressInterval = simulateProgress();
+
+        try {
+          // Upload to backend
+          const response = await fileUploadApi.uploadFile(file, 'grievance-attachments');
+          
+          clearInterval(progressInterval);
+          setUploadProgress(prev => ({
+            ...prev,
+            [file.name]: 100
+          }));
+
+          // Add to attachments list
+          const newAttachment = {
+            id: Date.now() + Math.random(),
+            name: file.name,
+            size: file.size,
+            type: file.type,
+            filePath: response.filePath,
+            uploadedAt: new Date().toLocaleString()
+          };
+
+          setAttachments(prev => [...prev, newAttachment]);
+
+        } catch (uploadError) {
+          clearInterval(progressInterval);
+          console.error(`Error uploading ${file.name}:`, uploadError);
+          alert(`Failed to upload "${file.name}": ${uploadError.message || 'Unknown error'}`);
+        }
+      }
+
+    } catch (error) {
+      console.error('Error in file upload process:', error);
+      alert('Error uploading files. Please try again.');
+    } finally {
       setIsUploading(false);
+      setUploadProgress({});
       e.target.value = ''; // Reset file input
-    }, 1000);
+    }
   };
 
-  const removeAttachment = (id) => {
-    setAttachments(prev => prev.filter(attachment => attachment.id !== id));
+  const removeAttachment = async (id, filePath) => {
+    try {
+      // Remove from backend storage if filePath exists
+      if (filePath) {
+        // Extract folder and filename from filePath
+        const pathParts = filePath.split('/');
+        if (pathParts.length >= 2) {
+          const folder = pathParts[0];
+          const filename = pathParts.slice(1).join('/');
+          
+          // Call delete API
+          await fileUploadApi.deleteFile(folder, filename);
+        }
+      }
+      
+      // Remove from local state
+      setAttachments(prev => prev.filter(attachment => attachment.id !== id));
+      
+    } catch (error) {
+      console.error('Error deleting file:', error);
+      alert('Error removing file. It may still be removed from the list.');
+      // Still remove from list even if backend delete fails
+      setAttachments(prev => prev.filter(attachment => attachment.id !== id));
+    }
   };
 
   const formatFileSize = (bytes) => {
@@ -93,6 +208,23 @@ const GrievanceForm = ({ categories, user, onGrievanceSubmit, editGrievance = nu
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
+  const getFileIcon = (fileName) => {
+    const ext = fileName.substring(fileName.lastIndexOf('.')).toLowerCase();
+    switch(ext) {
+      case '.pdf': return '📕';
+      case '.jpg':
+      case '.jpeg':
+      case '.png': return '🖼️';
+      case '.doc':
+      case '.docx': return '📄';
+      case '.txt': return '📝';
+      default: return '📎';
+    }
+  };
+
+  const formattedCategories = getFormattedCategories();
+  const formattedDepartments = getFormattedDepartments();
+
   return (
     <div className="grievance-form-card">
       <h2>{isEditMode ? '✏️ Edit Grievance' : '📝 Submit New Grievance'}</h2>
@@ -100,16 +232,8 @@ const GrievanceForm = ({ categories, user, onGrievanceSubmit, editGrievance = nu
       {/* Show grievance ID in edit mode */}
       {isEditMode && (
         <div className="edit-mode-info">
-          <p><strong>Grievance ID:</strong> {editGrievance.grievance_id}</p>
+          <p><strong>Grievance ID:</strong> {editGrievance.grievance_id || editGrievance.grievanceId}</p>
           <p><strong>Status:</strong> {editGrievance.status}</p>
-        </div>
-      )}
-
-      {/* Show student's department as read-only information */}
-      {!isEditMode && user && user.department && (
-        <div className="department-info">
-          <p><strong>Department:</strong> {user.department}</p>
-          <p className="department-note">📍 Your grievance will be automatically routed to {user.department} department staff</p>
         </div>
       )}
 
@@ -135,9 +259,26 @@ const GrievanceForm = ({ categories, user, onGrievanceSubmit, editGrievance = nu
               onChange={handleChange}
               required
             >
-              {categories.map(category => (
+              {formattedCategories.map(category => (
                 <option key={category.category_id} value={category.category_id}>
                   {category.category_name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="form-group">
+            <label>Department *</label>
+            <select
+              name="department_id"
+              value={formData.department_id}
+              onChange={handleChange}
+              required
+            >
+              <option value="">Select Department</option>
+              {formattedDepartments.map(dept => (
+                <option key={dept.department_id} value={dept.department_id}>
+                  {dept.department_name}
                 </option>
               ))}
             </select>
@@ -159,8 +300,6 @@ const GrievanceForm = ({ categories, user, onGrievanceSubmit, editGrievance = nu
           </div>
         </div>
 
-        {/* Department selection REMOVED - using user's registered department */}
-
         <div className="form-group">
           <label>Description *</label>
           <textarea
@@ -173,7 +312,7 @@ const GrievanceForm = ({ categories, user, onGrievanceSubmit, editGrievance = nu
           />
         </div>
 
-        {/* File Upload Section */}
+        {/* File Upload Section - UPDATED WITH REAL UPLOAD */}
         <div className="form-group">
           <label>📎 Attach Documents (Optional)</label>
           <div className="file-upload-section">
@@ -185,27 +324,62 @@ const GrievanceForm = ({ categories, user, onGrievanceSubmit, editGrievance = nu
                 onChange={handleFileUpload}
                 className="file-input"
                 id="file-upload"
+                disabled={isUploading || attachments.length >= 5}
               />
-              <label htmlFor="file-upload" className="file-upload-btn">
+              <label 
+                htmlFor="file-upload" 
+                className={`file-upload-btn ${(isUploading || attachments.length >= 5) ? 'disabled' : ''}`}
+              >
                 {isUploading ? '📤 Uploading...' : '📁 Choose Files'}
               </label>
-              <span className="file-info">Max 5 files, 5MB each</span>
+              <span className="file-info">
+                Max 5 files, 5MB each (PDF, JPG, PNG, DOC, TXT)
+              </span>
+              {attachments.length >= 5 && (
+                <span className="file-limit-warning">⚠️ Maximum 5 files reached</span>
+              )}
             </div>
+
+            {/* Upload Progress */}
+            {Object.keys(uploadProgress).length > 0 && (
+              <div className="upload-progress-container">
+                {Object.entries(uploadProgress).map(([fileName, progress]) => (
+                  <div key={fileName} className="upload-progress-item">
+                    <div className="progress-file-name">{fileName}</div>
+                    <div className="progress-bar">
+                      <div 
+                        className="progress-fill" 
+                        style={{ width: `${progress}%` }}
+                      ></div>
+                    </div>
+                    <div className="progress-percentage">{progress}%</div>
+                  </div>
+                ))}
+              </div>
+            )}
 
             {/* File List */}
             {attachments.length > 0 && (
               <div className="attachments-list">
-                <h4>Attached Files ({attachments.length})</h4>
+                <h4>Attached Files ({attachments.length}/5)</h4>
                 {attachments.map(attachment => (
                   <div key={attachment.id} className="attachment-item">
+                    <div className="file-icon">{getFileIcon(attachment.name)}</div>
                     <div className="file-info">
-                      <span className="file-name">{attachment.name}</span>
+                      <span className="file-name" title={attachment.name}>
+                        {attachment.name.length > 30 
+                          ? attachment.name.substring(0, 30) + '...' 
+                          : attachment.name}
+                      </span>
                       <span className="file-size">{formatFileSize(attachment.size)}</span>
+                      <span className="file-status">✅ Uploaded</span>
                     </div>
                     <button
                       type="button"
                       className="remove-file-btn"
-                      onClick={() => removeAttachment(attachment.id)}
+                      onClick={() => removeAttachment(attachment.id, attachment.filePath)}
+                      disabled={isUploading}
+                      title="Remove file"
                     >
                       ❌
                     </button>
@@ -216,7 +390,11 @@ const GrievanceForm = ({ categories, user, onGrievanceSubmit, editGrievance = nu
           </div>
         </div>
 
-        <button type="submit" className="submit-btn" disabled={isUploading}>
+        <button 
+          type="submit" 
+          className="submit-btn" 
+          disabled={isUploading}
+        >
           {isUploading ? '🔄 Processing...' : (isEditMode ? '💾 Update Grievance' : '✅ Submit Grievance')}
         </button>
       </form>

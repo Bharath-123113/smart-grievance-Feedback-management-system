@@ -1,28 +1,27 @@
 package com.resolveit.backend.dto;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class SignupResponse {
-    private String message;
     private boolean success;
-    private String userId;
-    private String email;
-    private String role;
+    private String message;
     
-    public SignupResponse(String message, boolean success, String userId, String email, String role) {
-        this.message = message;
-        this.success = success;
-        this.userId = userId;
-        this.email = email;
-        this.role = role;
+    // Static helper methods
+    public static SignupResponse success(String message) {
+        return new SignupResponse(true, message);
     }
     
     public static SignupResponse error(String message) {
-        return new SignupResponse(message, false, null, null, null);
+        return new SignupResponse(false, message);
     }
     
-    public static SignupResponse success(String message, String userId, String email, String role) {
-        return new SignupResponse(message, true, userId, email, role);
+    public static SignupResponse success(String message, String username, String email, String role) {
+        return new SignupResponse(true, 
+            message + " Username: " + username + ", Email: " + email + ", Role: " + role);
     }
 }

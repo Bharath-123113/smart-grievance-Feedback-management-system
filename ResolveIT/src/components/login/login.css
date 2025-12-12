@@ -181,3 +181,37 @@
   color: #718096;
   margin-bottom: 25px;
 }
+.error-input {
+  border-color: #ff3860 !important;
+  border-width: 2px;
+}
+
+.error-text {
+  color: #ff3860;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+  font-weight: 500;
+}
+
+.input-hint {
+  color: #666;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+  display: block;
+  font-style: italic;
+}
+
+.registration-section .setup-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.registration-section .setup-header h1 {
+  color: #2c3e50;
+  margin-bottom: 0.5rem;
+}
+
+.registration-section .setup-form {
+  max-width: 600px;
+  margin: 0 auto;
+}

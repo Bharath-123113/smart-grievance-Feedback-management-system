@@ -1,132 +1,500 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./DepartmentDashboard.css";
+import { adminDashboardApi, commonDashboardApi } from "../services/apiService";
+
+// NEW: Search Bar Component for Admin
+const AdminSearchBar = ({ searchKeyword, setSearchKeyword, onSearch, loading }) => {
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      onSearch();
+    }
+  };
+
+  return (
+    <div className="search-bar-container">
+      <div className="search-bar">
+        <input
+          type="text"
+          placeholder="Search grievances by title, description, or ID..."
+          value={searchKeyword}
+          onChange={(e) => setSearchKeyword(e.target.value)}
+          onKeyPress={handleKeyPress}
+          className="search-input"
+        />
+        <button 
+          className="search-btn" 
+          onClick={onSearch}
+          disabled={loading}
+        >
+          {loading ? '🔍' : '🔍 Search'}
+        </button>
+      </div>
+      {searchKeyword && (
+        <div className="search-info">
+          <span>Searching for: "{searchKeyword}"</span>
+          <button 
+            className="clear-search"
+            onClick={() => {
+              setSearchKeyword('');
+              onSearch();
+            }}
+          >
+            Clear
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
 
 const AdminDashboard = ({ user, onLogout }) => {
   const [activeView, setActiveView] = useState("dashboard");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [selectedGrievance, setSelectedGrievance] = useState(null);
   const [assignStaffId, setAssignStaffId] = useState("");
+  const [loading, setLoading] = useState(false);
+  
+  // State for real data
+  const [stats, setStats] = useState({
+    totalGrievances: 0,
+    newGrievances: 0,
+    assignedToAdmin: 0,
+    assignedToStaff: 0,
+    inProgress: 0,
+    resolved: 0,
+    rejected: 0,
+    staffCount: 0
+  });
+  
+  const [grievances, setGrievances] = useState([]);
+  const [newGrievances, setNewGrievances] = useState([]);
+  const [staffMembers, setStaffMembers] = useState([]);
+  const [staffPerformance, setStaffPerformance] = useState([]);
+  const [summary, setSummary] = useState({});
+  const [categories, setCategories] = useState([]);
+  
+  // NEW: Pagination state
+  const [pagination, setPagination] = useState({
+    page: 0,
+    size: 10,
+    totalElements: 0,
+    totalPages: 0
+  });
+  
+  // NEW: Filter state
+  const [filters, setFilters] = useState({
+    status: '',
+    categoryId: '',
+    priority: '',
+    startDate: '',
+    endDate: '',
+    sortBy: 'createdAt',
+    sortDirection: 'DESC'
+  });
+
+  // NEW: Separate search state
+  const [searchKeyword, setSearchKeyword] = useState('');
+  
+  // NEW: Show filters in sidebar
+  const [showFilters, setShowFilters] = useState(false);
 
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
-  const closeSidebar = () => setIsSidebarOpen(false);
+  const closeSidebar = () => {
+    setIsSidebarOpen(false);
+    setShowFilters(false);
+  };
 
-  // Sample data
-  const staffMembers = [
-    { id: 1, name: "Prof. Sharma", department: "Computer Science", email: "sharma@college.edu" },
-    { id: 2, name: "Dr. Gupta", department: "Computer Science", email: "gupta@college.edu" },
-    { id: 3, name: "Prof. Kumar", department: "Electrical Engineering", email: "kumar@college.edu" },
-    { id: 4, name: "Dr. Singh", department: "Mechanical Engineering", email: "singh@college.edu" },
-    { id: 5, name: "Prof. Patel", department: "Library", email: "patel@college.edu" }
-  ];
-
-  const [grievances, setGrievances] = useState([
-    {
-      id: 1,
-      title: "WiFi Connectivity Issues",
-      student: "Ajay Kumar",
-      department: "Computer Science",
-      status: "new",
-      priority: "high",
-      description: "WiFi connection is down in the entire 3rd floor of CS building.",
-      submitted: "2 hours ago",
-      grievanceId: "CRY-X2024-001",
-      assignedTo: null
-    },
-    {
-      id: 2,
-      title: "Library Books Not Available",
-      student: "Priya Sharma",
-      department: "Library",
-      status: "new",
-      priority: "medium",
-      description: "Required textbooks for CS-301 are always issued to other students.",
-      submitted: "5 hours ago",
-      grievanceId: "CRY-X2024-002",
-      assignedTo: null
-    },
-    {
-      id: 3,
-      title: "Project Grade Dispute",
-      student: "Rahul Verma",
-      department: "Computer Science",
-      status: "new",
-      priority: "high",
-      description: "I believe my project deserves higher marks based on the rubric criteria.",
-      submitted: "1 day ago",
-      grievanceId: "CRY-X2024-003",
-      assignedTo: null
-    },
-    {
-      id: 4,
-      title: "Lab Equipment Maintenance",
-      student: "Anita Desai",
-      department: "Computer Science",
-      status: "in-progress",
-      priority: "medium",
-      description: "Computers in Lab 3 are running very slow and need maintenance.",
-      submitted: "3 hours ago",
-      grievanceId: "CRY-X2024-004",
-      assignedTo: "Prof. Sharma"
+  // Fetch categories
+  const fetchCategories = async () => {
+    try {
+      const response = await commonDashboardApi.getCategories();
+      if (response.data) {
+        setCategories(response.data);
+      } else {
+        setCategories(response);
+      }
+    } catch (error) {
+      console.error("Error fetching categories:", error);
     }
-  ]);
+  };
 
-  const systemStats = {
-    totalUsers: 156,
-    activeGrievances: grievances.filter(g => g.status !== 'resolved').length,
-    departments: 8,
-    resolutionRate: 67
+  // Fetch dashboard data
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      
+      // Fetch stats
+      const statsResponse = await adminDashboardApi.getDepartmentStats();
+      if (statsResponse.success) {
+        setStats(statsResponse.data);
+      }
+      
+      // Fetch new grievances
+      const newGrievancesResponse = await adminDashboardApi.getNewGrievances();
+      if (newGrievancesResponse.success) {
+        setNewGrievances(newGrievancesResponse.data || []);
+      }
+      
+      // Fetch summary
+      const summaryResponse = await adminDashboardApi.getDashboardSummary();
+      if (summaryResponse.success) {
+        setSummary(summaryResponse.data || {});
+      }
+      
+    } catch (error) {
+      console.error("Error fetching dashboard data:", error);
+      alert("Failed to load dashboard data. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch all grievances with filters
+  const fetchGrievances = async (page = 0, customFilters = null, customSearch = null) => {
+    try {
+      setLoading(true);
+      
+      const currentFilters = customFilters || filters;
+      const currentSearch = customSearch !== undefined ? customSearch : searchKeyword;
+      
+      let response;
+      
+      if (currentSearch) {
+        // Search endpoint (searches only by keyword)
+        response = await adminDashboardApi.searchGrievances(
+          currentSearch,
+          page,
+          pagination.size
+        );
+      } else if (currentFilters.status || currentFilters.categoryId || currentFilters.priority ||
+                currentFilters.startDate || currentFilters.endDate) {
+        
+        // Use filter endpoint (POST with JSON body)
+        const filterData = {
+          ...currentFilters,
+          page: page,
+          size: pagination.size
+        };
+        response = await adminDashboardApi.filterGrievances(filterData);
+      } else {
+        // Use paginated endpoint
+        response = await adminDashboardApi.getPaginatedGrievances(
+          page,
+          pagination.size,
+          currentFilters.status
+        );
+      }
+      
+      // Handle response format
+      let grievancesData = [];
+      let totalElements = 0;
+      let totalPages = 0;
+      
+      if (response.data && response.data.content) {
+        // With ApiResponse wrapper
+        grievancesData = response.data.content;
+        totalElements = response.data.totalElements || 0;
+        totalPages = response.data.totalPages || 0;
+      } else if (response.content) {
+        // Direct PaginatedResponse
+        grievancesData = response.content;
+        totalElements = response.totalElements || 0;
+        totalPages = response.totalPages || 0;
+      } else {
+        // Fallback to array
+        grievancesData = response.data || response;
+      }
+      
+      console.log('📥 Admin grievances response:', { 
+        data: grievancesData, 
+        total: totalElements,
+        pages: totalPages 
+      });
+      
+      setGrievances(grievancesData);
+      setPagination(prev => ({
+        ...prev,
+        page: page,
+        totalElements: totalElements,
+        totalPages: totalPages
+      }));
+      
+    } catch (error) {
+      console.error("Error fetching grievances:", error);
+      alert("Failed to load grievances. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch staff members
+  const fetchStaff = async () => {
+    try {
+      const response = await adminDashboardApi.getDepartmentStaff();
+      if (response.success) {
+        setStaffMembers(response.data || []);
+      }
+    } catch (error) {
+      console.error("Error fetching staff:", error);
+    }
+  };
+
+  // Fetch staff performance
+  const fetchStaffPerformance = async () => {
+    try {
+      const response = await adminDashboardApi.getStaffPerformance();
+      if (response.success) {
+        setStaffPerformance(response.data || []);
+      }
+    } catch (error) {
+      console.error("Error fetching staff performance:", error);
+    }
+  };
+
+  // Handle filter application from sidebar
+  const handleApplyFilters = () => {
+    setSearchKeyword(''); // Clear search when applying filters
+    setPagination(prev => ({ ...prev, page: 0 })); // Reset to first page
+    fetchGrievances(0, filters, ''); // Apply filters, clear search
+    setShowFilters(false); // Hide filter panel
+    setIsSidebarOpen(false); // Close sidebar on mobile
+  };
+
+  // Handle filter reset from sidebar
+  const handleResetFilters = () => {
+    const resetFilters = {
+      status: '',
+      categoryId: '',
+      priority: '',
+      startDate: '',
+      endDate: '',
+      sortBy: 'createdAt',
+      sortDirection: 'DESC'
+    };
+    setFilters(resetFilters);
+    setSearchKeyword(''); // Also clear search
+    setPagination(prev => ({ ...prev, page: 0 }));
+    fetchGrievances(0, resetFilters, '');
+  };
+
+  // Handle search
+  const handleSearch = () => {
+    setPagination(prev => ({ ...prev, page: 0 })); // Reset to first page
+    // Clear other filters when searching
+    const resetFilters = {
+      status: '',
+      categoryId: '',
+      priority: '',
+      startDate: '',
+      endDate: '',
+      sortBy: 'createdAt',
+      sortDirection: 'DESC'
+    };
+    setFilters(resetFilters);
+    fetchGrievances(0, resetFilters, searchKeyword);
+  };
+
+  // Handle page change
+  const handlePageChange = (newPage) => {
+    if (newPage >= 0 && newPage < pagination.totalPages) {
+      fetchGrievances(newPage);
+    }
+  };
+
+  // Fetch data based on active view
+  useEffect(() => {
+    fetchCategories();
+    
+    switch(activeView) {
+      case "dashboard":
+        fetchDashboardData();
+        break;
+      case "grievances":
+        fetchGrievances(pagination.page);
+        break;
+      case "staff":
+        fetchStaff();
+        break;
+      case "assign-grievance":
+        if (selectedGrievance) {
+          fetchStaff(); // To populate staff dropdown
+        }
+        break;
+      default:
+        break;
+    }
+  }, [activeView, selectedGrievance]);
+
+  // Assign grievance to admin
+  const assignToMe = async (grievanceId) => {
+    try {
+      setLoading(true);
+      const response = await adminDashboardApi.assignGrievanceToMe(grievanceId);
+      if (response.success) {
+        alert("✅ Grievance assigned to you!");
+        // Refresh data
+        fetchDashboardData();
+        fetchGrievances(pagination.page);
+      } else {
+        alert(`Failed to assign: ${response.message}`);
+      }
+    } catch (error) {
+      console.error("Error assigning grievance:", error);
+      alert("Failed to assign grievance. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Assign grievance to staff
+  const assignToStaff = async (grievanceId, staffId, notes = "") => {
+    try {
+      setLoading(true);
+      const response = await adminDashboardApi.assignToStaff(grievanceId, {
+        staffId: staffId,
+        notes: notes
+      });
+      
+      if (response.success) {
+        alert("✅ Grievance assigned to staff!");
+        // Reset and go back to dashboard
+        setAssignStaffId("");
+        setSelectedGrievance(null);
+        setActiveView("dashboard");
+        // Refresh data
+        fetchDashboardData();
+        fetchGrievances(pagination.page);
+      } else {
+        alert(`Failed to assign: ${response.message}`);
+      }
+    } catch (error) {
+      console.error("Error assigning to staff:", error);
+      alert("Failed to assign grievance. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Reject grievance
+  const rejectGrievance = async (grievanceId, reason) => {
+    if (!reason || reason.trim() === "") {
+      alert("Please provide a reason for rejection");
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      const response = await adminDashboardApi.rejectGrievance(grievanceId, reason);
+      if (response.success) {
+        alert("✅ Grievance rejected!");
+        fetchDashboardData();
+        fetchGrievances(pagination.page);
+      } else {
+        alert(`Failed to reject: ${response.message}`);
+      }
+    } catch (error) {
+      console.error("Error rejecting grievance:", error);
+      alert("Failed to reject grievance. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Format date
+  const formatDate = (dateString) => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+    
+    if (diffMins < 60) return `${diffMins} minute${diffMins !== 1 ? 's' : ''} ago`;
+    if (diffHours < 24) return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`;
+    return `${diffDays} day${diffDays !== 1 ? 's' : ''} ago`;
+  };
+
+  // Get status display text
+  const getStatusDisplay = (status) => {
+    switch(status) {
+      case 'submitted': return '🆕 New';
+      case 'assigned_to_admin': return '👨‍💼 Assigned to Admin';
+      case 'assigned_to_staff': return '👨‍💼 Assigned to Staff';
+      case 'in_progress': return '🔄 In Progress';
+      case 'resolved': return '✅ Resolved';
+      case 'rejected': return '❌ Rejected';
+      default: return status;
+    }
+  };
+
+  // Get priority badge class
+  const getPriorityClass = (priority) => {
+    switch(priority?.toLowerCase()) {
+      case 'urgent': return 'priority-urgent';
+      case 'high': return 'priority-high';
+      case 'medium': return 'priority-medium';
+      case 'low': return 'priority-low';
+      default: return 'priority-medium';
+    }
   };
 
   // Handle view changes
   const handleViewChange = (view) => {
     setActiveView(view);
+    setShowFilters(false);
     closeSidebar();
   };
 
-  // Assign grievance to staff
-  const assignGrievance = (grievanceId, staffId) => {
-    const staff = staffMembers.find(s => s.id === parseInt(staffId));
-    if (!staff) {
-      alert("Please select a staff member");
-      return;
-    }
-
-    setGrievances(prev =>
-      prev.map(g =>
-        g.id === grievanceId
-          ? { ...g, assignedTo: staff.name, status: "in-progress" }
-          : g
-      )
-    );
-
-    setAssignStaffId("");
-    setSelectedGrievance(null);
-    alert(`✅ Grievance assigned to ${staff.name}`);
+  // Handle filter click
+  const handleFilterClick = () => {
+    setShowFilters(!showFilters);
+    setActiveView("grievances"); // Switch to grievances view when filtering
   };
 
   // Handle quick actions
   const handleQuickAction = (action) => {
     switch(action) {
-      case "Manage Users":
-        setActiveView("users");
+      case "Manage Staff":
+        setActiveView("staff");
+        fetchStaffPerformance();
         break;
-      case "Department Management":
-        setActiveView("departments");
-        break;
-      case "System Analytics":
+      case "View Analytics":
         setActiveView("analytics");
-        break;
-      case "System Settings":
-        setActiveView("settings");
         break;
       default:
         alert(`Action: ${action}`);
     }
   };
 
-  // Get staff by department
-  const getStaffByDepartment = (department) => {
-    return staffMembers.filter(staff => staff.department === department);
+  // ==================== PAGINATION COMPONENT ====================
+  const PaginationControls = () => {
+    if (pagination.totalPages <= 1) return null;
+    
+    return (
+      <div className="pagination-controls">
+        <button
+          className="btn-small"
+          disabled={pagination.page === 0}
+          onClick={() => handlePageChange(pagination.page - 1)}
+        >
+          ← Previous
+        </button>
+        
+        <span className="page-info">
+          Page {pagination.page + 1} of {pagination.totalPages}
+          <span className="total-items"> ({pagination.totalElements} total items)</span>
+        </span>
+        
+        <button
+          className="btn-small"
+          disabled={pagination.page >= pagination.totalPages - 1}
+          onClick={() => handlePageChange(pagination.page + 1)}
+        >
+          Next →
+        </button>
+      </div>
+    );
   };
 
   return (
@@ -147,7 +515,7 @@ const AdminDashboard = ({ user, onLogout }) => {
           <div>
             <h1>ResolveIT</h1>
             <span className="user-role">
-              SUPER ADMIN DASHBOARD
+              DEPARTMENT ADMIN DASHBOARD
             </span>
           </div>
         </div>
@@ -180,20 +548,6 @@ const AdminDashboard = ({ user, onLogout }) => {
             </div>
 
             <div
-              className={`menu-item ${activeView === "users" ? "active" : ""}`}
-              onClick={() => handleViewChange("users")}
-            >
-              👥 User Management
-            </div>
-
-            <div
-              className={`menu-item ${activeView === "departments" ? "active" : ""}`}
-              onClick={() => handleViewChange("departments")}
-            >
-              🏢 Department Management
-            </div>
-
-            <div
               className={`menu-item ${activeView === "grievances" ? "active" : ""}`}
               onClick={() => handleViewChange("grievances")}
             >
@@ -201,48 +555,148 @@ const AdminDashboard = ({ user, onLogout }) => {
             </div>
 
             <div
+              className={`menu-item ${showFilters ? "active" : ""}`}
+              onClick={handleFilterClick}
+            >
+              🔍 Filters
+            </div>
+
+            <div
+              className={`menu-item ${activeView === "staff" ? "active" : ""}`}
+              onClick={() => {
+                handleViewChange("staff");
+                fetchStaffPerformance();
+              }}
+            >
+              👥 Staff Management
+            </div>
+
+            <div
               className={`menu-item ${activeView === "analytics" ? "active" : ""}`}
               onClick={() => handleViewChange("analytics")}
             >
-              📈 System Analytics
+              📈 Analytics
             </div>
+
+            {/* Filter Panel (shown when filters is active) */}
+            {showFilters && (
+              <div className="filter-panel-sidebar">
+                <div className="filter-panel-header">
+                  <h4>Filter Grievances</h4>
+                </div>
+
+                <div className="filter-group">
+                  <label>Status</label>
+                  <select
+                    value={filters?.status || ''}
+                    onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+                    className="filter-select"
+                  >
+                    <option value="">All Status</option>
+                    <option value="submitted">Submitted</option>
+                    <option value="assigned_to_admin">Assigned to Admin</option>
+                    <option value="assigned_to_staff">Assigned to Staff</option>
+                    <option value="in_progress">In Progress</option>
+                    <option value="resolved">Resolved</option>
+                    <option value="rejected">Rejected</option>
+                  </select>
+                </div>
+
+                <div className="filter-group">
+                  <label>Priority</label>
+                  <select
+                    value={filters?.priority || ''}
+                    onChange={(e) => setFilters({ ...filters, priority: e.target.value })}
+                    className="filter-select"
+                  >
+                    <option value="">All Priority</option>
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                    <option value="urgent">Urgent</option>
+                  </select>
+                </div>
+
+                {categories.length > 0 && (
+                  <div className="filter-group">
+                    <label>Category</label>
+                    <select
+                      value={filters?.categoryId || ''}
+                      onChange={(e) => setFilters({ ...filters, categoryId: e.target.value })}
+                      className="filter-select"
+                    >
+                      <option value="">All Categories</option>
+                      {categories.map(category => (
+                        <option key={category.id} value={category.id}>
+                          {category.categoryName}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                <div className="filter-group">
+                  <label>From Date</label>
+                  <input
+                    type="date"
+                    value={filters?.startDate || ''}
+                    onChange={(e) => setFilters({ ...filters, startDate: e.target.value })}
+                    className="filter-input"
+                  />
+                </div>
+
+                <div className="filter-group">
+                  <label>To Date</label>
+                  <input
+                    type="date"
+                    value={filters?.endDate || ''}
+                    onChange={(e) => setFilters({ ...filters, endDate: e.target.value })}
+                    className="filter-input"
+                  />
+                </div>
+
+                <div className="filter-group">
+                  <label>Sort By</label>
+                  <select
+                    value={filters?.sortBy || 'createdAt'}
+                    onChange={(e) => setFilters({ ...filters, sortBy: e.target.value })}
+                    className="filter-select"
+                  >
+                    <option value="createdAt">Created Date</option>
+                    <option value="updatedAt">Updated Date</option>
+                    <option value="priority">Priority</option>
+                    <option value="status">Status</option>
+                  </select>
+                </div>
+
+                <div className="filter-actions">
+                  <button className="filter-btn apply" onClick={handleApplyFilters}>
+                    Apply Filters
+                  </button>
+                  <button className="filter-btn reset" onClick={handleResetFilters}>
+                    Reset
+                  </button>
+                </div>
+              </div>
+            )}
 
             <h4>Admin Controls</h4>
 
-            <div
-              className={`menu-item ${activeView === "settings" ? "active" : ""}`}
-              onClick={() => handleViewChange("settings")}
-            >
-              ⚙️ System Settings
+            <div className="menu-item">
+              ⚙️ Settings
             </div>
 
-            <div
-              className={`menu-item ${activeView === "reports" ? "active" : ""}`}
-              onClick={() => handleViewChange("reports")}
-            >
+            <div className="menu-item">
               📊 Reports
-            </div>
-
-            <div
-              className={`menu-item ${activeView === "security" ? "active" : ""}`}
-              onClick={() => handleViewChange("security")}
-            >
-              🔐 Security
             </div>
 
             <h4>Support</h4>
 
-            <div
-              className={`menu-item ${activeView === "notifications" ? "active" : ""}`}
-              onClick={() => handleViewChange("notifications")}
-            >
-              🔔 Notifications <span className="badge">5</span>
+            <div className="menu-item">
+              🔔 Notifications
             </div>
 
-            <div
-              className={`menu-item ${activeView === "profile" ? "active" : ""}`}
-              onClick={() => handleViewChange("profile")}
-            >
+            <div className="menu-item">
               👤 My Profile
             </div>
           </div>
@@ -250,103 +704,206 @@ const AdminDashboard = ({ user, onLogout }) => {
 
         {/* MAIN CONTENT */}
         <main className="main-content">
+          {loading && (
+            <div className="loading-overlay">
+              <div className="loading-spinner">Loading...</div>
+            </div>
+          )}
+
           {/* DASHBOARD VIEW */}
           {activeView === "dashboard" && (
             <>
               <div className="welcome-section">
                 <h1>Hello, {user.first_name}!</h1>
-                <p>System overview and management dashboard.</p>
+                <p>Manage your department grievances efficiently.</p>
               </div>
 
               <div className="quick-actions">
                 <button
                   className="action-btn"
-                  onClick={() => handleQuickAction("Manage Users")}
+                  onClick={() => handleQuickAction("Manage Staff")}
                 >
-                  👥 Manage Users
+                  👥 Manage Staff
                 </button>
 
                 <button
                   className="action-btn"
-                  onClick={() => handleQuickAction("Department Management")}
+                  onClick={() => handleViewChange("grievances")}
                 >
-                  🏢 Departments
+                  📋 View All Grievances
                 </button>
 
                 <button
                   className="action-btn"
-                  onClick={() => handleQuickAction("System Analytics")}
+                  onClick={() => handleQuickAction("View Analytics")}
                 >
                   📈 Analytics
-                </button>
-
-                <button
-                  className="action-btn"
-                  onClick={() => handleQuickAction("System Settings")}
-                >
-                  ⚙️ Settings
                 </button>
               </div>
 
               <div className="stats-grid">
                 <div className="stat-card">
-                  <h3>{systemStats.totalUsers}</h3>
-                  <p>Total Users</p>
+                  <h3>{stats.totalGrievances}</h3>
+                  <p>Total Grievances</p>
                 </div>
 
                 <div className="stat-card">
-                  <h3>{systemStats.activeGrievances}</h3>
-                  <p>Active Grievances</p>
+                  <h3>{stats.newGrievances}</h3>
+                  <p>New Grievances</p>
                 </div>
 
                 <div className="stat-card">
-                  <h3>{systemStats.departments}</h3>
-                  <p>Departments</p>
+                  <h3>{stats.inProgress + stats.assignedToAdmin + stats.assignedToStaff}</h3>
+                  <p>In Progress</p>
                 </div>
 
                 <div className="stat-card">
-                  <h3>{systemStats.resolutionRate}%</h3>
-                  <p>Resolution Rate</p>
+                  <h3>{stats.resolved}</h3>
+                  <p>Resolved</p>
                 </div>
               </div>
 
               {/* Recent Grievances Section */}
               <div className="recent-grievances">
-                <h2>Recent Grievances - Need Assignment</h2>
-                <div className="grievance-list">
-                  {grievances
-                    .filter(g => g.status === "new")
-                    .slice(0, 3)
-                    .map((g) => (
-                    <div className="grievance-item" key={g.id}>
-                      <h3>{g.title}</h3>
-                      <p>{g.description}</p>
-                      <div className="grievance-meta">
-                        <span><strong>Grievance ID:</strong> {g.grievanceId}</span>
-                        <span>From: {g.student}</span>
-                        <span>Department: {g.department}</span>
-                        <span className={`priority-${g.priority}`}>
-                          Priority: {g.priority}
-                        </span>
-                        <span>Status: 🆕 New</span>
-                        <span>Submitted: {g.submitted}</span>
+                <h2>New Grievances - Need Assignment</h2>
+                {newGrievances.length === 0 ? (
+                  <div className="empty-state">
+                    <p>No new grievances to assign. 🎉</p>
+                  </div>
+                ) : (
+                  <div className="grievance-list">
+                    {newGrievances.slice(0, 3).map((g) => (
+                      <div className="grievance-item" key={g.id}>
+                        <h3>{g.title}</h3>
+                        <p>{g.description}</p>
+                        <div className="grievance-meta">
+                          <span><strong>ID:</strong> {g.grievanceId}</span>
+                          <span><strong>Priority:</strong> 
+                            <span className={getPriorityClass(g.priority)}>
+                              {g.priority}
+                            </span>
+                          </span>
+                          <span><strong>Status:</strong> {getStatusDisplay(g.status)}</span>
+                          <span><strong>Created:</strong> {formatDate(g.createdAt)}</span>
+                        </div>
+                        <div className="grievance-actions">
+                          <button
+                            className="btn-small btn-primary"
+                            onClick={() => assignToMe(g.id)}
+                          >
+                            👤 Assign to Me
+                          </button>
+                          <button
+                            className="btn-small btn-secondary"
+                            onClick={() => {
+                              setSelectedGrievance(g);
+                              setActiveView("assign-grievance");
+                            }}
+                          >
+                            📋 View Details
+                          </button>
+                        </div>
                       </div>
-                      <div className="grievance-actions">
-                        <button
-                          className="btn-small btn-primary"
-                          onClick={() => {
-                            setSelectedGrievance(g);
-                            setActiveView("assign-grievance");
-                          }}
-                        >
-                          👤 Assign Staff
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </>
+          )}
+
+          {/* ALL GRIEVANCES VIEW */}
+          {activeView === "grievances" && (
+            <div>
+              <h1>All Grievances</h1>
+              <p>View and manage grievances in your department.</p>
+
+              {/* Search Bar */}
+              <AdminSearchBar
+                searchKeyword={searchKeyword}
+                setSearchKeyword={setSearchKeyword}
+                onSearch={handleSearch}
+                loading={loading}
+              />
+
+              {loading ? (
+                <div className="loading">Loading grievances...</div>
+              ) : (
+                <>
+                  <div className="grievance-list">
+                    {grievances.map((g) => (
+                      <div className="grievance-item" key={g.id}>
+                        <h3>{g.title}</h3>
+                        <p>{g.description}</p>
+                        <div className="grievance-meta">
+                          <span><strong>ID:</strong> {g.grievanceId}</span>
+                          <span><strong>Priority:</strong>
+                            <span className={getPriorityClass(g.priority)}>
+                              {g.priority}
+                            </span>
+                          </span>
+                          <span><strong>Status:</strong> {getStatusDisplay(g.status)}</span>
+                          <span><strong>Created:</strong> {formatDate(g.createdAt)}</span>
+                          {g.assignedTo && <span><strong>Assigned to:</strong> Staff ID: {g.assignedTo}</span>}
+                          {g.categoryName && <span><strong>Category:</strong> {g.categoryName}</span>}
+                          {g.departmentName && <span><strong>Department:</strong> {g.departmentName}</span>}
+                        </div>
+                        <div className="grievance-actions">
+                          {g.status === "submitted" && (
+                            <>
+                              <button
+                                className="btn-small btn-primary"
+                                onClick={() => assignToMe(g.id)}
+                              >
+                                👤 Assign to Me
+                              </button>
+                              <button
+                                className="btn-small btn-secondary"
+                                onClick={() => {
+                                  setSelectedGrievance(g);
+                                  setActiveView("assign-grievance");
+                                }}
+                              >
+                                📋 View Details
+                              </button>
+                            </>
+                          )}
+                          {g.status === "assigned_to_admin" && (
+                            <button
+                              className="btn-small btn-info"
+                              onClick={() => {
+                                setSelectedGrievance(g);
+                                setActiveView("assign-grievance");
+                              }}
+                            >
+                              👥 Assign to Staff
+                            </button>
+                          )}
+                          {g.status === "resolved" && g.feedback && (
+                            <span className="feedback-badge">
+                              ⭐ {g.feedback.rating}/5
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                    
+                    {grievances.length === 0 && (
+                      <div className="empty-state">
+                        <p>No grievances found with current filters.</p>
+                        <button
+                          className="btn-primary"
+                          onClick={handleResetFilters}
+                        >
+                          Reset Filters
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  <PaginationControls />
+                </>
+              )}
+            </div>
           )}
 
           {/* ASSIGN GRIEVANCE VIEW */}
@@ -366,15 +923,14 @@ const AdminDashboard = ({ user, onLogout }) => {
                 <div className="detail-section">
                   <h2>{selectedGrievance.title}</h2>
                   <div className="detail-meta">
-                    <span><strong>Grievance ID:</strong> {selectedGrievance.grievanceId}</span>
-                    <span><strong>Student:</strong> {selectedGrievance.student}</span>
-                    <span><strong>Department:</strong> {selectedGrievance.department}</span>
+                    <span><strong>ID:</strong> {selectedGrievance.grievanceId}</span>
                     <span><strong>Priority:</strong>
-                      <span className={`priority-${selectedGrievance.priority}`}>
+                      <span className={getPriorityClass(selectedGrievance.priority)}>
                         {selectedGrievance.priority}
                       </span>
                     </span>
-                    <span><strong>Status:</strong> 🆕 New</span>
+                    <span><strong>Status:</strong> {getStatusDisplay(selectedGrievance.status)}</span>
+                    <span><strong>Created:</strong> {formatDate(selectedGrievance.createdAt)}</span>
                   </div>
                 </div>
 
@@ -387,16 +943,17 @@ const AdminDashboard = ({ user, onLogout }) => {
                   <h3>Assign to Staff Member</h3>
 
                   <div className="form-group">
-                    <label>Select Staff from {selectedGrievance.department} Department *</label>
+                    <label>Select Staff Member *</label>
                     <select
                       value={assignStaffId}
                       onChange={(e) => setAssignStaffId(e.target.value)}
                       className="status-select"
+                      disabled={loading}
                     >
                       <option value="">Choose a staff member...</option>
-                      {getStaffByDepartment(selectedGrievance.department).map(staff => (
+                      {staffMembers.map(staff => (
                         <option key={staff.id} value={staff.id}>
-                          {staff.name} - {staff.email}
+                          {staff.firstName} {staff.lastName} - {staff.email}
                         </option>
                       ))}
                     </select>
@@ -406,261 +963,193 @@ const AdminDashboard = ({ user, onLogout }) => {
                     <div className="staff-info">
                       <h4>Selected Staff:</h4>
                       <div className="staff-details">
-                        <p><strong>Name:</strong> {staffMembers.find(s => s.id === parseInt(assignStaffId))?.name}</p>
-                        <p><strong>Email:</strong> {staffMembers.find(s => s.id === parseInt(assignStaffId))?.email}</p>
-                        <p><strong>Department:</strong> {staffMembers.find(s => s.id === parseInt(assignStaffId))?.department}</p>
+                        {staffMembers.find(s => s.id.toString() === assignStaffId) && (
+                          <>
+                            <p><strong>Name:</strong> {staffMembers.find(s => s.id.toString() === assignStaffId).firstName} {staffMembers.find(s => s.id.toString() === assignStaffId).lastName}</p>
+                            <p><strong>Email:</strong> {staffMembers.find(s => s.id.toString() === assignStaffId).email}</p>
+                          </>
+                        )}
                       </div>
                     </div>
                   )}
 
                   <button
                     className="btn-primary"
-                    onClick={() => assignGrievance(selectedGrievance.id, assignStaffId)}
-                    disabled={!assignStaffId}
+                    onClick={() => assignToStaff(selectedGrievance.id, assignStaffId)}
+                    disabled={!assignStaffId || loading}
                   >
-                    ✅ Assign to Staff
+                    {loading ? "Assigning..." : "✅ Assign to Staff"}
+                  </button>
+
+                  <button
+                    className="btn-danger"
+                    style={{ marginLeft: "10px" }}
+                    onClick={() => {
+                      const reason = prompt("Please provide a reason for rejection:");
+                      if (reason) {
+                        rejectGrievance(selectedGrievance.id, reason);
+                      }
+                    }}
+                  >
+                    ❌ Reject Grievance
                   </button>
                 </div>
               </div>
             </div>
           )}
 
-          {/* USER MANAGEMENT VIEW */}
-          {activeView === "users" && (
+          {/* STAFF MANAGEMENT VIEW */}
+          {activeView === "staff" && (
             <div>
-              <h1>User Management</h1>
-              <p>Manage all system users - Students, Staff, and Admins.</p>
+              <h1>Staff Management</h1>
+              <p>Manage staff members in your department.</p>
 
               <div className="stats-grid">
                 <div className="stat-card">
-                  <h3>89</h3>
-                  <p>Students</p>
-                </div>
-                <div className="stat-card">
-                  <h3>52</h3>
-                  <p>Staff Members</p>
-                </div>
-                <div className="stat-card">
-                  <h3>15</h3>
-                  <p>Admins</p>
+                  <h3>{staffMembers.length}</h3>
+                  <p>Total Staff</p>
                 </div>
               </div>
 
-              <div className="quick-actions">
-                <button className="action-btn">➕ Add New User</button>
-                <button className="action-btn">📧 Bulk Import</button>
-                <button className="action-btn">📊 User Reports</button>
+              <div className="staff-list">
+                <h3>Staff Members</h3>
+                {staffMembers.length === 0 ? (
+                  <div className="empty-state">
+                    <p>No staff members in your department.</p>
+                  </div>
+                ) : (
+                  <table className="staff-table">
+                    <thead>
+                      <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {staffMembers.map(staff => (
+                        <tr key={staff.id}>
+                          <td>{staff.firstName} {staff.lastName}</td>
+                          <td>{staff.email}</td>
+                          <td>{staff.role}</td>
+                          <td>
+                            <span className={`status-${staff.isActive ? 'active' : 'inactive'}`}>
+                              {staff.isActive ? 'Active' : 'Inactive'}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
               </div>
-            </div>
-          )}
 
-          {/* DEPARTMENT MANAGEMENT VIEW */}
-          {activeView === "departments" && (
-            <div>
-              <h1>Department Management</h1>
-              <p>Manage all departments and assign staff.</p>
-
-              <div className="grievance-list">
-                <div className="grievance-item">
-                  <h3>Computer Science</h3>
-                  <p>Department of Computer Science and Engineering</p>
-                  <div className="grievance-meta">
-                    <span><strong>Staff Count:</strong> 12</span>
-                    <span><strong>Active Grievances:</strong> 8</span>
-                    <span><strong>HOD:</strong> Prof. Rajesh Kumar</span>
-                  </div>
-                  <div className="grievance-actions">
-                    <button className="btn-small btn-primary">Manage Staff</button>
-                    <button className="btn-small btn-secondary">Edit Department</button>
-                  </div>
+              {/* Staff Performance */}
+              {staffPerformance.length > 0 && (
+                <div className="performance-section">
+                  <h3>Staff Performance</h3>
+                  <table className="performance-table">
+                    <thead>
+                      <tr>
+                        <th>Staff Name</th>
+                        <th>Assigned</th>
+                        <th>Resolved</th>
+                        <th>Pending</th>
+                        <th>Resolution Rate</th>
+                        <th>Avg. Time</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {staffPerformance.map(performance => (
+                        <tr key={performance.staffId}>
+                          <td>{performance.staffName}</td>
+                          <td>{performance.assignedGrievances}</td>
+                          <td>{performance.resolvedGrievances}</td>
+                          <td>{performance.pendingGrievances}</td>
+                          <td>{performance.resolutionRate?.toFixed(1)}%</td>
+                          <td>{performance.avgResolutionTime || 0}h</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
-
-                <div className="grievance-item">
-                  <h3>Electrical Engineering</h3>
-                  <p>Department of Electrical and Electronics Engineering</p>
-                  <div className="grievance-meta">
-                    <span><strong>Staff Count:</strong> 8</span>
-                    <span><strong>Active Grievances:</strong> 5</span>
-                    <span><strong>HOD:</strong> Dr. Sunita Patel</span>
-                  </div>
-                  <div className="grievance-actions">
-                    <button className="btn-small btn-primary">Manage Staff</button>
-                    <button className="btn-small btn-secondary">Edit Department</button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* ALL GRIEVANCES VIEW */}
-          {activeView === "grievances" && (
-            <div>
-              <h1>All Grievances</h1>
-              <p>View and manage grievances across all departments.</p>
-
-              <div className="grievance-list">
-                {grievances.map((g) => (
-                  <div className="grievance-item" key={g.id}>
-                    <h3>{g.title}</h3>
-                    <p>{g.description}</p>
-                    <div className="grievance-meta">
-                      <span><strong>Grievance ID:</strong> {g.grievanceId}</span>
-                      <span>From: {g.student}</span>
-                      <span>Department: {g.department}</span>
-                      <span className={`priority-${g.priority}`}>
-                        Priority: {g.priority}
-                      </span>
-                      <span>Status:
-                        <strong>
-                          {g.status === 'new' && ' 🆕 New'}
-                          {g.status === 'in-progress' && ' 🔄 In Progress'}
-                          {g.status === 'resolved' && ' ✅ Resolved'}
-                        </strong>
-                      </span>
-                      {g.assignedTo && <span>Assigned to: {g.assignedTo}</span>}
-                    </div>
-                    {g.status === "new" && (
-                      <div className="grievance-actions">
-                        <button
-                          className="btn-small btn-primary"
-                          onClick={() => {
-                            setSelectedGrievance(g);
-                            setActiveView("assign-grievance");
-                          }}
-                        >
-                          👤 Assign Staff
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
+              )}
             </div>
           )}
 
           {/* ANALYTICS VIEW */}
           {activeView === "analytics" && (
             <div>
-              <h1>System Analytics</h1>
-              <p>Comprehensive system-wide analytics and reports.</p>
+              <h1>Analytics & Reports</h1>
+              <p>Department performance analytics.</p>
 
               <div className="stats-grid">
                 <div className="stat-card">
-                  <h3>42</h3>
-                  <p>Grievances This Month</p>
+                  <h3>{stats.totalGrievances}</h3>
+                  <p>Total Grievances</p>
                 </div>
                 <div className="stat-card">
-                  <h3>67%</h3>
+                  <h3>{stats.newGrievances}</h3>
+                  <p>Pending</p>
+                </div>
+                <div className="stat-card">
+                  <h3>{stats.resolved}</h3>
+                  <p>Resolved</p>
+                </div>
+                <div className="stat-card">
+                  <h3>
+                    {stats.totalGrievances > 0 
+                      ? Math.round((stats.resolved / stats.totalGrievances) * 100) 
+                      : 0}%
+                  </h3>
                   <p>Resolution Rate</p>
                 </div>
-                <div className="stat-card">
-                  <h3>2.1</h3>
-                  <p>Avg. Resolution Days</p>
-                </div>
-                <div className="stat-card">
-                  <h3>92%</h3>
-                  <p>Student Satisfaction</p>
-                </div>
               </div>
-            </div>
-          )}
 
-          {/* OTHER VIEWS */}
-          {activeView === "settings" && (
-            <div>
-              <h1>System Settings</h1>
-              <p>Configure system-wide settings and preferences.</p>
-              <div className="grievance-list">
-                <div className="grievance-item">
-                  <h3>General Settings</h3>
-                  <p>System name, logo, contact information, and basic configuration</p>
-                  <button className="btn-small btn-primary">Configure</button>
-                </div>
-                <div className="grievance-item">
-                  <h3>Email Settings</h3>
-                  <p>SMTP configuration, email templates, and notification settings</p>
-                  <button className="btn-small btn-primary">Configure</button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {activeView === "reports" && (
-            <div>
-              <h1>Reports</h1>
-              <p>Generate and view system reports.</p>
-              <div className="quick-actions">
-                <button className="action-btn">📊 Grievance Reports</button>
-                <button className="action-btn">👥 User Reports</button>
-                <button className="action-btn">🏢 Department Reports</button>
-                <button className="action-btn">📈 Performance Reports</button>
-              </div>
-            </div>
-          )}
-
-          {activeView === "security" && (
-            <div>
-              <h1>Security</h1>
-              <p>Manage system security and access controls.</p>
-              <div className="grievance-list">
-                <div className="grievance-item">
-                  <h3>Access Control</h3>
-                  <p>Manage user roles and permissions across the system</p>
-                  <button className="btn-small btn-primary">Manage Roles</button>
-                </div>
-                <div className="grievance-item">
-                  <h3>Audit Logs</h3>
-                  <p>View system activity logs and user actions</p>
-                  <button className="btn-small btn-primary">View Logs</button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* NOTIFICATIONS VIEW */}
-          {activeView === "notifications" && (
-            <div className="view-container">
-              <h1>Notifications</h1>
-              <div className="notifications-list">
-                <div className="notification-item unread">
-                  <div className="notification-icon">🔔</div>
-                  <div className="notification-content">
-                    <h4>New Grievance Submitted</h4>
-                    <p>New grievance "Project Grade Dispute" needs assignment</p>
-                    <span className="notification-time">10 min ago</span>
+              <div className="analytics-chart">
+                <h3>Grievance Distribution</h3>
+                <div className="chart-bars">
+                  <div className="chart-bar" style={{height: '100px', width: '80px', margin: '0 10px'}}>
+                    <div 
+                      className="bar-fill" 
+                      style={{
+                        height: `${(stats.newGrievances / Math.max(stats.totalGrievances, 1)) * 100}%`,
+                        backgroundColor: '#3498db'
+                      }}
+                    ></div>
+                    <div className="bar-label">New</div>
                   </div>
-                </div>
-                <div className="notification-item">
-                  <div className="notification-icon">📋</div>
-                  <div className="notification-content">
-                    <h4>Grievance Resolved</h4>
-                    <p>Grievance "Library Books" has been resolved by Prof. Sharma</p>
-                    <span className="notification-time">1 hour ago</span>
+                  <div className="chart-bar" style={{height: '100px', width: '80px', margin: '0 10px'}}>
+                    <div
+                      className="bar-fill" 
+                      style={{
+                        height: `${((stats.inProgress + stats.assignedToAdmin + stats.assignedToStaff) / Math.max(stats.totalGrievances, 1)) * 100}%`,
+                        backgroundColor: '#f39c12'
+                      }}
+                    ></div>
+                    <div className="bar-label">In Progress</div>
                   </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {activeView === "profile" && (
-            <div className="view-container">
-              <h1>My Profile</h1>
-              <div className="profile-content">
-                <div className="profile-section">
-                  <h3>Personal Information</h3>
-                  <div className="profile-info">
-                    <p><strong>Name:</strong> {user.first_name} {user.last_name}</p>
-                    <p><strong>Role:</strong> Super Administrator</p>
-                    <p><strong>Email:</strong> {user.email || "admin@resolveit.edu"}</p>
-                    <p><strong>Admin ID:</strong> ADMIN-001</p>
-                    <p><strong>Access Level:</strong> Full System Access</p>
+                  <div className="chart-bar" style={{height: '100px', width: '80px', margin: '0 10px'}}>
+                    <div 
+                      className="bar-fill" 
+                      style={{
+                        height: `${(stats.resolved / Math.max(stats.totalGrievances, 1)) * 100}%`,
+                        backgroundColor: '#27ae60'
+                      }}
+                    ></div>
+                    <div className="bar-label">Resolved</div>
                   </div>
-                </div>
-
-                <div className="profile-section">
-                  <h3>Account Settings</h3>
-                  <button className="btn-primary">Change Password</button>
-                  <button className="btn-secondary" style={{marginLeft: '10px'}}>Update Profile</button>
+                  <div className="chart-bar" style={{height: '100px', width: '80px', margin: '0 10px'}}>
+                    <div 
+                      className="bar-fill" 
+                      style={{
+                        height: `${(stats.rejected / Math.max(stats.totalGrievances, 1)) * 100}%`,
+                        backgroundColor: '#e74c3c'
+                      }}
+                    ></div>
+                    <div className="bar-label">Rejected</div>
+                  </div>
                 </div>
               </div>
             </div>

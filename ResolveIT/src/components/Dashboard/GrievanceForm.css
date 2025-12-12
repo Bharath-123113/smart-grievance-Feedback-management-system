@@ -219,4 +219,142 @@
   .remove-file-btn {
     align-self: flex-end;
   }
+  /* File Upload Progress Styles */
+.upload-progress-container {
+  margin: 15px 0;
+  background: #f8f9fa;
+  padding: 10px;
+  border-radius: 5px;
+}
+
+.upload-progress-item {
+  display: flex;
+  align-items: center;
+  margin: 8px 0;
+  padding: 8px;
+  background: white;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.progress-file-name {
+  flex: 1;
+  font-size: 14px;
+  color: #333;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-right: 10px;
+}
+
+.progress-bar {
+  flex: 2;
+  height: 8px;
+  background: #e0e0e0;
+  border-radius: 4px;
+  overflow: hidden;
+  margin: 0 10px;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4CAF50, #8BC34A);
+  transition: width 0.3s ease;
+}
+
+.progress-percentage {
+  width: 40px;
+  text-align: right;
+  font-size: 12px;
+  font-weight: bold;
+  color: #4CAF50;
+}
+
+.file-limit-warning {
+  display: block;
+  color: #ff9800;
+  font-size: 12px;
+  margin-top: 5px;
+  font-weight: bold;
+}
+
+.file-upload-btn.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.file-icon {
+  font-size: 20px;
+  margin-right: 10px;
+}
+
+.file-status {
+  display: block;
+  font-size: 11px;
+  color: #4CAF50;
+  margin-top: 2px;
+}
+
+.attachment-item {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  border: 1px solid #e0e0e0;
+  border-radius: 5px;
+  margin: 5px 0;
+  transition: all 0.3s;
+}
+
+.attachment-item:hover {
+  background: #f9f9f9;
+  border-color: #4CAF50;
+}
+
+.file-info {
+  flex: 1;
+  min-width: 0; /* Allows text truncation */
+}
+
+.file-name {
+  display: block;
+  font-weight: 500;
+  color: #333;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.remove-file-btn {
+  background: none;
+  border: none;
+  color: #ff5252;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 5px;
+  border-radius: 3px;
+  transition: background 0.3s;
+}
+
+.remove-file-btn:hover:not(:disabled) {
+  background: #ffebee;
+}
+
+.remove-file-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Edit mode styling */
+.edit-mode-info {
+  background: #e3f2fd;
+  padding: 10px 15px;
+  border-radius: 5px;
+  margin-bottom: 15px;
+  border-left: 4px solid #2196F3;
+}
+
+.edit-mode-info p {
+  margin: 5px 0;
+  color: #1565C0;
+}
 }

@@ -229,3 +229,98 @@
   left: 0 !important;
   transform: translateX(0) !important;
 }
+/* Filter Panel in Sidebar */
+.filter-panel-sidebar {
+  padding: 20px;
+  background: #f8f9fa;
+  border-top: 1px solid #e9ecef;
+  border-bottom: 1px solid #e9ecef;
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.filter-panel-header {
+  margin-bottom: 15px;
+}
+
+.filter-panel-header h4 {
+  margin: 0;
+  color: #2c3e50;
+  font-size: 16px;
+}
+
+.filter-group {
+  margin-bottom: 15px;
+}
+
+.filter-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 13px;
+  color: #6c757d;
+  font-weight: 500;
+}
+
+.filter-select,
+.filter-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  font-size: 14px;
+  background: white;
+  color: #495057;
+}
+
+.filter-select:focus,
+.filter-input:focus {
+  outline: none;
+  border-color: #4dabf7;
+  box-shadow: 0 0 0 2px rgba(77, 171, 247, 0.2);
+}
+
+.filter-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.filter-btn {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filter-btn.apply {
+  background: #007bff;
+  color: white;
+}
+
+.filter-btn.apply:hover {
+  background: #0056b3;
+}
+
+.filter-btn.reset {
+  background: #6c757d;
+  color: white;
+}
+
+.filter-btn.reset:hover {
+  background: #545b62;
+}
+
+/* Make sure sidebar can accommodate filters */
+.sidebar {
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-nav {
+  flex: 1;
+  overflow-y: auto;
+}

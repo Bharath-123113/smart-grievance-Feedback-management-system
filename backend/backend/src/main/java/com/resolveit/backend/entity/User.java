@@ -1,5 +1,7 @@
 package com.resolveit.backend.entity;
 
+import java.math.BigDecimal;
+
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -40,11 +42,24 @@ public class User {
     
     @Column(name = "created_at")
     private java.time.LocalDateTime createdAt = java.time.LocalDateTime.now();
+    @Column(name = "enrollment_number", length = 50)
+    private String enrollmentNumber;
+    @Column(name = "address", columnDefinition = "TEXT")
+    private String address;
+    @Column(name = "academic_year", length = 20)
+    private String academicYear;
+    @Column(name = "program", length = 100)
+    private String program;
+    @Column(name = "semester")
+    private Integer semester;
+    @Column(name = "gpa", precision = 3, scale = 2)
+    private BigDecimal gpa;  // Or Double if you prefer
+    @Column(name = "profile_picture_url")
+    private String profilePictureUrl;
+    @Column(name = "email_notifications")
+    private Boolean emailNotifications = true;
+    @Column(name = "push_notifications")
+    private Boolean pushNotifications = false;
 
-    // If you want to establish a relationship with Department entity later:
-    /*
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "department_id", insertable = false, updatable = false)
-    private Department department;
-    */
+
 }

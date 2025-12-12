@@ -356,4 +356,800 @@
     align-items: flex-start;
     gap: 5px;
   }
+  /* Add these to GrievanceDetails.css */
+.resolution-card {
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 8px;
+  padding: 20px;
+  margin-top: 10px;
+}
+
+.resolution-info {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.resolution-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.resolution-item.full-width {
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.resolution-item label {
+  font-weight: 600;
+  color: #0369a1;
+  min-width: 140px;
+}
+
+.notes-box {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 15px;
+  margin-top: 5px;
+  line-height: 1.5;
+}
+
+.attachments-section {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  background: #f8fafc;
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.info-text {
+  margin: 0;
+  color: #475569;
+}
+
+.view-attachments-btn {
+  background: #3b82f6;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.view-attachments-btn:hover {
+  background: #2563eb;
+}
+
+/* Status-specific backgrounds */
+.next-steps-card p {
+  padding: 10px;
+  border-radius: 6px;
+  background: #f0f9ff; /* Default blue */
+}
+
+/* Submitted - yellow */
+.next-steps-card p:contains('submitted') {
+  background: #fef3c7;
+}
+
+/* In Progress - blue */
+.next-steps-card p:contains('processed') {
+  background: #dbeafe;
+}
+
+/* Resolved - green */
+.next-steps-card p:contains('resolved') {
+  background: #d1fae5;
+}
+
+/* Rejected - red */
+.next-steps-card p:contains('rejected') {
+  background: #fee2e2;
+}
+/* Remarks Section - COMPLETE STYLING */
+
+/* Remarks Controls */
+.remarks-controls {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.refresh-btn {
+  background: #3b82f6;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s;
+}
+
+.refresh-btn:hover:not(:disabled) {
+  background: #2563eb;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+}
+
+.refresh-btn:disabled {
+  background: #93c5fd;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.auto-refresh-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #6b7280;
+  cursor: pointer;
+}
+
+.auto-refresh-toggle input {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: #3b82f6;
+}
+
+/* Remarks Container */
+.remarks-container {
+  background: #f9fafb;
+  border-radius: 10px;
+  padding: 20px;
+  margin: 20px 0;
+  min-height: 200px;
+  border: 1px solid #e5e7eb;
+}
+
+/* Loading State */
+.loading-remarks {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  color: #6b7280;
+}
+
+.spinner-small {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #f3f4f6;
+  border-top: 3px solid #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 15px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* No Remarks State */
+.no-remarks {
+  text-align: center;
+  padding: 40px 20px;
+  background: white;
+  border: 2px dashed #d1d5db;
+  border-radius: 8px;
+  color: #6b7280;
+  font-size: 16px;
+}
+
+.no-remarks p {
+  margin: 0;
+  color: #4b5563;
+  font-size: 15px;
+}
+
+/* Remarks List */
+.remarks-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-height: 400px;
+  overflow-y: auto;
+  padding-right: 10px;
+}
+
+/* Single Remark Card */
+.remark-card {
+  padding: 16px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  background: white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s;
+}
+
+.remark-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border-color: #d1d5db;
+}
+
+/* Student Remark */
+.student-remark {
+  border-left: 4px solid #3b82f6;
+  background: linear-gradient(90deg, #f0f9ff 0%, white 10%);
+}
+
+/* Staff Remark */
+.staff-remark {
+  border-left: 4px solid #10b981;
+  background: linear-gradient(90deg, #f0fdf4 0%, white 10%);
+}
+
+/* Remark Header */
+.remark-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.remark-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.remark-user strong {
+  font-size: 15px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.user-badge {
+  padding: 4px 12px;
+  border-radius: 20px;
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.remark-time {
+  font-size: 13px;
+  color: #6b7280;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* Remark Message */
+.remark-message {
+  line-height: 1.6;
+  color: #374151;
+  font-size: 15px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  padding-left: 4px;
+}
+
+/* Add Remark Section */
+.add-remark-section {
+  margin-top: 30px;
+  padding: 25px;
+  background: #f8fafc;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+}
+
+.add-remark-section h4 {
+  margin: 0 0 20px 0;
+  color: #1e293b;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+/* Remark Form */
+.remark-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.remark-input {
+  width: 100%;
+  padding: 14px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 15px;
+  resize: vertical;
+  min-height: 100px;
+  line-height: 1.5;
+  transition: all 0.2s;
+  background: white;
+}
+
+.remark-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  background: white;
+}
+
+.remark-input::placeholder {
+  color: #94a3b8;
+}
+
+.remark-input:disabled {
+  background: #f1f5f9;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* Remark Actions */
+.remark-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.cancel-btn {
+  padding: 10px 20px;
+  background: white;
+  border: 2px solid #d1d5db;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  color: #4b5563;
+  transition: all 0.2s;
+}
+
+.cancel-btn:hover:not(:disabled) {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.cancel-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.submit-remark-btn {
+  padding: 10px 24px;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 15px;
+  transition: all 0.2s;
+}
+
+.submit-remark-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+.submit-remark-btn:disabled {
+  background: #93c5fd;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Remark Hint */
+.remark-hint {
+  font-size: 13px;
+  color: #64748b;
+  margin-top: 15px;
+  padding: 10px;
+  background: #f1f5f9;
+  border-radius: 6px;
+  border-left: 3px solid #3b82f6;
+  font-style: italic;
+}
+
+/* Scrollbar Styling */
+.remarks-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.remarks-list::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+.remarks-list::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.remarks-list::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .remarks-controls {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  
+  .remark-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .remark-time {
+    align-self: flex-end;
+  }
+  
+  .remark-actions {
+    flex-direction: column;
+  }
+  
+  .cancel-btn, .submit-remark-btn {
+    width: 100%;
+  }
+}
+/* WebSocket Connection Status */
+.connection-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+    padding: 6px 12px;
+    background: #f8fafc;
+    border-radius: 20px;
+    border: 1px solid #e2e8f0;
+    font-size: 14px;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.status-dot.connected {
+    background: #10b981;
+    animation: pulse 2s infinite;
+}
+
+.status-dot.disconnected {
+    background: #ef4444;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+.connection-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 10px;
+    background: #f1f5f9;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.connection-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+}
+
+.connection-dot.connected {
+    background: #10b981;
+}
+
+.connection-dot.disconnected {
+    background: #ef4444;
+}
+
+/* Typing Indicator */
+.typing-indicator {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 15px;
+    background: #f8fafc;
+    border-radius: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #e2e8f0;
+    font-size: 14px;
+    color: #64748b;
+}
+
+.typing-dots {
+    display: flex;
+    gap: 4px;
+}
+
+.typing-dots span {
+    width: 6px;
+    height: 6px;
+    background: #94a3b8;
+    border-radius: 50%;
+    animation: typing 1.4s infinite;
+}
+
+.typing-dots span:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.typing-dots span:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+@keyframes typing {
+    0%, 60%, 100% {
+        transform: translateY(0);
+        opacity: 0.6;
+    }
+    30% {
+        transform: translateY(-4px);
+        opacity: 1;
+    }
+}
+
+/* Internal Remark Badge */
+.internal-badge {
+    display: inline-block;
+    margin-top: 8px;
+    padding: 3px 8px;
+    background: #fef3c7;
+    border: 1px solid #fde68a;
+    border-radius: 4px;
+    font-size: 11px;
+    color: #92400e;
+    font-weight: 500;
+}
+
+/* Keyboard Shortcut Hint */
+.remark-hint kbd {
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 12px;
+    font-family: monospace;
+    color: #475569;
+}
+
+/* Live Chat Header */
+.details-section .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.details-section .section-header h3 {
+    margin: 0;
+    font-size: 18px;
+    color: #1e293b;
+}
+
+/* Smooth Scroll */
+.remarks-list {
+    scroll-behavior: smooth;
+}
+
+/* Send Button Animation */
+.submit-remark-btn:not(:disabled) {
+    position: relative;
+    overflow: hidden;
+}
+
+.submit-remark-btn:not(:disabled):hover::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 5px;
+    height: 5px;
+    background: rgba(255, 255, 255, 0.5);
+    opacity: 0;
+    border-radius: 100%;
+    transform: scale(1, 1) translate(-50%);
+    transform-origin: 50% 50%;
+}
+
+.submit-remark-btn:not(:disabled):hover:focus::after {
+    animation: ripple 1s ease-out;
+}
+
+@keyframes ripple {
+    0% {
+        transform: scale(0, 0);
+        opacity: 0.5;
+    }
+    100% {
+        transform: scale(20, 20);
+        opacity: 0;
+    }
+}
+
+/* Message Animation */
+.remark-card {
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Connection Status Animation */
+.connection-status.connected {
+    animation: statusPulse 2s infinite;
+}
+
+@keyframes statusPulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+    }
+    70% {
+        box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+    }
+}
+/* Status Timeline Styles */
+.status-timeline {
+  margin: 20px 0;
+}
+
+.timeline-item {
+  display: flex;
+  margin-bottom: 25px;
+  position: relative;
+}
+
+.timeline-marker {
+  position: relative;
+  margin-right: 20px;
+}
+
+.marker-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 3px solid white;
+  box-shadow: 0 0 0 2px;
+  z-index: 2;
+  position: relative;
+}
+
+.timeline-line {
+  position: absolute;
+  top: 16px;
+  left: 7px;
+  width: 2px;
+  height: calc(100% + 9px);
+  background: #e5e7eb;
+  z-index: 1;
+}
+
+.timeline-item:last-child .timeline-line {
+  display: none;
+}
+
+.timeline-content {
+  flex: 1;
+  padding-bottom: 5px;
+}
+
+.timeline-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.timeline-header strong {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.timeline-date {
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.timeline-note {
+  margin: 0;
+  color: #4b5563;
+  line-height: 1.5;
+  font-size: 15px;
+}
+
+.updated-by {
+  display: block;
+  margin-top: 6px;
+  font-size: 13px;
+  color: #9ca3af;
+  font-style: italic;
+}
+
+/* Current Status Card */
+.current-status-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 20px;
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.status-dot-large {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.status-info {
+  flex: 1;
+}
+
+.status-info h4 {
+  margin: 0 0 10px 0;
+  color: #1e293b;
+  font-size: 18px;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 20px;
+  color: white;
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+.status-description {
+  margin: 10px 0 0 0;
+  color: #64748b;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.loading-timeline {
+  text-align: center;
+  padding: 30px;
+  color: #6b7280;
+}
 }

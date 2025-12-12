@@ -1,51 +1,57 @@
 import React from 'react';
+import './QuickStats.css';
 
-const QuickStats = ({ grievances }) => {
-  const total = grievances.length;
-  const submitted = grievances.filter(g => g.status === 'submitted').length;
-  const inProgress = grievances.filter(g => g.status === 'in-progress' || g.status === 'under_review').length;
-  const resolved = grievances.filter(g => g.status === 'resolved').length;
-  const rejected = grievances.filter(g => g.status === 'rejected').length;
+const QuickStats = ({ stats, grievances = [] }) => {
+  // Use backend stats if provided, otherwise calculate from grievances
+  const displayStats = stats || {
+    totalGrievances: grievances.length,
+    submittedGrievances: grievances.filter(g => g.status === 'submitted').length,
+    inProgressGrievances: grievances.filter(g => g.status === 'in_progress' || g.status === 'under_review').length,
+    resolvedGrievances: grievances.filter(g => g.status === 'resolved').length,
+    rejectedGrievances: grievances.filter(g => g.status === 'rejected').length
+  };
 
-  const stats = [
+  const statCards = [
     {
-      label: 'Total Grievances',
-      value: total,
-      icon: '📋',
-      color: '#4F46E5'
+      title: 'Total Grievances',
+      value: displayStats.totalGrievances || 0,
+      color: 'blue',
+      icon: '📋'
     },
     {
-      label: 'Submitted',
-      value: submitted,
-      icon: '🟡',
-      color: '#f59e0b'
+      title: 'Submitted',
+      value: displayStats.submittedGrievances || 0,
+      color: 'yellow',
+      icon: '⏳'
     },
     {
-      label: 'In Progress',
-      value: inProgress,
-      icon: '🔵',
-      color: '#3b82f6'
+      title: 'In Progress',
+      value: displayStats.inProgressGrievances || 0,
+      color: 'orange',
+      icon: '🔧'
     },
     {
-      label: 'Resolved',
-      value: resolved,
-      icon: '🟢',
-      color: '#10b981'
+      title: 'Resolved',
+      value: displayStats.resolvedGrievances || 0,
+      color: 'green',
+      icon: '✅'
+    },
+    {
+      title: 'Rejected',
+      value: displayStats.rejectedGrievances || 0,
+      color: 'red',
+      icon: '❌'
     }
   ];
 
   return (
-    <div className="quick-stats-grid">
-      {stats.map((stat, index) => (
-        <div key={index} className="stat-card">
-          <div className="stat-icon" style={{color: stat.color}}>
-            {stat.icon}
-          </div>
-          <div className="stat-number" style={{color: stat.color}}>
-            {stat.value}
-          </div>
-          <div className="stat-label">
-            {stat.label}
+    <div className="quick-stats">
+      {statCards.map((stat, index) => (
+        <div key={index} className={`stat-card ${stat.color}`}>
+          <div className="stat-icon">{stat.icon}</div>
+          <div className="stat-content">
+            <h3>{stat.value}</h3>
+            <p>{stat.title}</p>
           </div>
         </div>
       ))}

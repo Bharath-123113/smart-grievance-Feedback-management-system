@@ -1,32 +1,36 @@
 import React, { useState, useEffect } from 'react';
 
-const GrievanceList = ({ grievances, categories, compact = false, onViewDetails, onEditGrievance, onGiveFeedback }) => {
+const GrievanceList = ({ 
+  grievances, 
+  categories, 
+  compact = false, 
+  onViewDetails, 
+  onEditGrievance, 
+  onGiveFeedback,
+  feedbackSubmitting = false 
+}) => {
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(10); // 10 items per page
+  const [itemsPerPage] = useState(10);
   const [sortedGrievances, setSortedGrievances] = useState([]);
+  const [submittingGrievanceId, setSubmittingGrievanceId] = useState(null);
 
-  // Sort grievances by newest first when component mounts or grievances change
   useEffect(() => {
-    // Create a copy of grievances and sort by date (newest first)
     const sorted = [...grievances].sort((a, b) => {
       const dateA = new Date(a.created_at);
       const dateB = new Date(b.created_at);
-      return dateB - dateA; // Newest first (descending order)
+      return dateB - dateA;
     });
     setSortedGrievances(sorted);
-    setCurrentPage(1); // Reset to first page when grievances change
+    setCurrentPage(1);
   }, [grievances]);
 
-  // Pagination calculations
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentGrievances = sortedGrievances.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(sortedGrievances.length / itemsPerPage);
 
-  // Change page
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
-  // Render pagination buttons (only for non-compact view)
   const renderPagination = () => {
     if (compact || totalPages <= 1) return null;
 
@@ -54,7 +58,6 @@ const GrievanceList = ({ grievances, categories, compact = false, onViewDetails,
           ← Previous
         </button>
 
-        {/* First page */}
         {startPage > 1 && (
           <>
             <button
@@ -67,7 +70,6 @@ const GrievanceList = ({ grievances, categories, compact = false, onViewDetails,
           </>
         )}
 
-        {/* Page numbers */}
         {pageNumbers.map(number => (
           <button
             key={number}
@@ -78,7 +80,6 @@ const GrievanceList = ({ grievances, categories, compact = false, onViewDetails,
           </button>
         ))}
 
-        {/* Last page */}
         {endPage < totalPages && (
           <>
             {endPage < totalPages - 1 && <span className="page-ellipsis">...</span>}
@@ -130,6 +131,7 @@ const GrievanceList = ({ grievances, categories, compact = false, onViewDetails,
   };
 
   const getDaysAgo = (dateString) => {
+    if (!dateString) return 'Recently';
     const created = new Date(dateString);
     const now = new Date();
     const diffTime = Math.abs(now - created);
@@ -156,44 +158,212 @@ const GrievanceList = ({ grievances, categories, compact = false, onViewDetails,
     if (onEditGrievance) {
       onEditGrievance(grievance);
     } else {
-      alert(`Edit functionality for "${grievance.title}" is not available yet. Currently, only "submitted" grievances can be edited, but this feature is still under development.`);
+      alert(`Edit functionality for "${grievance.title}" is not available yet.`);
     }
   };
 
   const handleGiveFeedback = (grievance) => {
+    console.log('GrievanceList: handleGiveFeedback called for:', grievance.id);
+    
+    // Show submitting state
+    setSubmittingGrievanceId(grievance.id);
+    
+    // Call parent handler
     if (onGiveFeedback) {
       onGiveFeedback(grievance);
     }
+    
+    // Reset submitting state after 3 seconds (in case of error)
+    setTimeout(() => {
+      setSubmittingGrievanceId(null);
+    }, 3000);
   };
 
-  const renderFeedbackSection = (grievance) => {
-    if (grievance.status !== 'resolved') return null;
+  // ==================== FEEDBACK STATUS FUNCTIONS ====================
 
-    if (grievance.feedback) {
-      return (
-        <div className="feedback-given">
-          <span className="feedback-rating">
-            ⭐ {grievance.feedback.rating}/5
-          </span>
-          <span className="feedback-label">Feedback Submitted</span>
-          {grievance.feedback.comment && (
-            <div className="feedback-comment-preview">
-              "{grievance.feedback.comment.substring(0, 50)}..."
+  // Check if feedback exists
+  const hasFeedback = (grievance) => {
+    if (!grievance || !grievance.feedback) return false;
+    
+    if (typeof grievance.feedback === 'object') {
+      // Check for actual feedback data
+      const hasData = grievance.feedback.rating !== undefined ||
+                     grievance.feedback.comment !== undefined ||
+                     grievance.feedback.submitted_at !== undefined ||
+                     grievance.feedback.alreadySubmitted === true ||
+                     Object.keys(grievance.feedback).length > 0;
+      
+      return hasData;
+    }
+    
+    return false;
+  };
+
+  // Check if feedback is currently being submitted
+  const isSubmittingFeedback = (grievance) => {
+    return submittingGrievanceId === grievance.id || 
+           grievance.feedback?.optimistic === true ||
+           (feedbackSubmitting && grievance.id === submittingGrievanceId);
+  };
+
+  // Get feedback status for display
+  const getFeedbackStatus = (grievance) => {
+    if (grievance.status !== 'resolved') {
+      return 'not_resolved';
+    }
+    
+    if (isSubmittingFeedback(grievance)) {
+      return 'submitting';
+    }
+    
+    if (hasFeedback(grievance)) {
+      return 'submitted';
+    }
+    
+    return 'can_submit';
+  };
+
+  // Get rating from feedback
+  const getFeedbackRating = (grievance) => {
+    if (!hasFeedback(grievance)) return null;
+    return grievance.feedback?.rating || grievance.feedback?.ratingValue || 0;
+  };
+
+  // Get comment from feedback
+  const getFeedbackComment = (grievance) => {
+    if (!hasFeedback(grievance)) return '';
+    return grievance.feedback?.comment || grievance.feedback?.feedbackComment || '';
+  };
+
+  // ==================== FEEDBACK UI RENDERING ====================
+
+  const renderFeedbackButton = (grievance) => {
+    const status = getFeedbackStatus(grievance);
+    
+    switch(status) {
+      case 'not_resolved':
+        return null; // No button for non-resolved grievances
+        
+      case 'submitting':
+        return (
+          <button className="feedback-btn submitting" disabled>
+            <span className="spinner-small"></span> Submitting...
+          </button>
+        );
+        
+      case 'submitted':
+        const rating = getFeedbackRating(grievance);
+        const comment = getFeedbackComment(grievance);
+        
+        return (
+          <div className="feedback-given">
+            <div className="feedback-header">
+              <span className="feedback-rating">
+                ⭐ {rating}/5
+              </span>
+              <span className="feedback-label success">
+                ✅ Feedback Submitted
+              </span>
             </div>
-          )}
-        </div>
-      );
-    } else {
-      return (
-        <button
-          className="feedback-btn"
-          onClick={() => handleGiveFeedback(grievance)}
-        >
-          💬 Give Feedback
-        </button>
-      );
+            {comment && comment.trim() !== '' && (
+              <div className="feedback-comment-preview">
+                "{comment.substring(0, 50)}..."
+                {comment.length > 50 && <span className="ellipsis">...</span>}
+              </div>
+            )}
+            {grievance.feedback?.unsynced && (
+              <div className="feedback-warning">
+                ⚠️ Not yet synced with server
+              </div>
+            )}
+          </div>
+        );
+        
+      case 'can_submit':
+      default:
+        return (
+          <button
+            className="feedback-btn"
+            onClick={() => handleGiveFeedback(grievance)}
+            disabled={feedbackSubmitting}
+          >
+            {feedbackSubmitting ? '⏳ Checking...' : '💬 Give Feedback'}
+          </button>
+        );
     }
   };
+
+  const renderFeedbackActionButton = (grievance) => {
+    const status = getFeedbackStatus(grievance);
+    
+    switch(status) {
+      case 'submitting':
+        return (
+          <button className="feedback-btn-action submitting" disabled>
+            <span className="spinner-small"></span> Submitting...
+          </button>
+        );
+        
+      case 'submitted':
+        const rating = getFeedbackRating(grievance);
+        return (
+          <span className="feedback-submitted-badge">
+            ✅ {rating ? `⭐ ${rating}/5` : 'Submitted'}
+          </span>
+        );
+        
+      case 'can_submit':
+        return (
+          <button
+            className="feedback-btn-action"
+            onClick={() => handleGiveFeedback(grievance)}
+            disabled={feedbackSubmitting}
+          >
+            💬 Feedback
+          </button>
+        );
+        
+      default:
+        return null;
+    }
+  };
+
+  const renderCompactFeedback = (grievance) => {
+    const status = getFeedbackStatus(grievance);
+    
+    switch(status) {
+      case 'submitting':
+        return (
+          <span className="feedback-compact submitting">
+            <span className="spinner-tiny"></span> Submitting
+          </span>
+        );
+        
+      case 'submitted':
+        const rating = getFeedbackRating(grievance);
+        return (
+          <span className="feedback-compact has-feedback">
+            ⭐ {rating}/5
+          </span>
+        );
+        
+      case 'can_submit':
+        return (
+          <span 
+            className="feedback-compact clickable"
+            onClick={() => handleGiveFeedback(grievance)}
+            title="Give Feedback"
+          >
+            💬 Feedback
+          </span>
+        );
+        
+      default:
+        return null;
+    }
+  };
+
+  // ==================== MAIN RENDER ====================
 
   return (
     <div className={`grievance-list ${compact ? 'grievance-list-compact' : ''}`}>
@@ -216,7 +386,7 @@ const GrievanceList = ({ grievances, categories, compact = false, onViewDetails,
           </div>
         ) : (
           currentGrievances.map(grievance => (
-            <div key={grievance.grievance_id} className="grievance-item">
+            <div key={grievance.grievance_id || grievance.id} className="grievance-item">
               <div className="grievance-header">
                 <div className="grievance-title-section">
                   <span className="grievance-status-icon">
@@ -238,13 +408,13 @@ const GrievanceList = ({ grievances, categories, compact = false, onViewDetails,
 
               <div className="grievance-meta">
                 <span className="category-tag">
-                  {getCategoryName(grievance.category_id)}
+                  {grievance.category || getCategoryName(grievance.category_id)}
                 </span>
                 <span className="date">
                   {getDaysAgo(grievance.created_at)}
                 </span>
                 <span className="grievance-id">
-                  ID: {grievance.grievance_id}
+                  ID: {grievance.grievance_id || grievance.id}
                 </span>
                 {grievance.has_attachments && (
                   <span className="attachments-indicator">
@@ -257,10 +427,10 @@ const GrievanceList = ({ grievances, categories, compact = false, onViewDetails,
                 <p className="grievance-description">{grievance.description}</p>
               </div>
 
-              {/* Feedback Section */}
-              {!compact && (
+              {/* Feedback Section - Only for non-compact view */}
+              {!compact && grievance.status === 'resolved' && (
                 <div className="feedback-section">
-                  {renderFeedbackSection(grievance)}
+                  {renderFeedbackButton(grievance)}
                 </div>
               )}
 
@@ -268,10 +438,10 @@ const GrievanceList = ({ grievances, categories, compact = false, onViewDetails,
                 <div className="grievance-footer">
                   <div className="assignment-info">
                     <span className="assigned-to">
-                      <strong>Assigned to:</strong> {grievance.assigned_to}
+                      <strong>Assigned to:</strong> {grievance.assignedToName || 'Not assigned'}
                     </span>
                     <span className="department">
-                      <strong>Department:</strong> {grievance.department}
+                      <strong>Department:</strong> {grievance.department || grievance.department_name}
                     </span>
                   </div>
                   <div className="grievance-actions">
@@ -289,15 +459,8 @@ const GrievanceList = ({ grievances, categories, compact = false, onViewDetails,
                         Edit
                       </button>
                     )}
-                    {/* Feedback button in actions for compact visibility */}
-                    {grievance.status === 'resolved' && !grievance.feedback && (
-                      <button
-                        className="feedback-btn-action"
-                        onClick={() => handleGiveFeedback(grievance)}
-                      >
-                        💬 Feedback
-                      </button>
-                    )}
+                    {/* Feedback action button */}
+                    {grievance.status === 'resolved' && renderFeedbackActionButton(grievance)}
                   </div>
                 </div>
               )}
@@ -306,17 +469,13 @@ const GrievanceList = ({ grievances, categories, compact = false, onViewDetails,
               {compact && (
                 <div className="grievance-footer-compact">
                   <span className="assigned-to-compact">
-                    👤 {grievance.assigned_to}
+                    👤 {grievance.assignedToName || 'Not assigned'}
                   </span>
                   <span className="department-compact">
-                    🏢 {grievance.department}
+                    🏢 {grievance.department || grievance.department_name}
                   </span>
                   {/* Feedback in compact view */}
-                  {grievance.status === 'resolved' && (
-                    <span className="feedback-compact">
-                      {grievance.feedback ? `⭐ ${grievance.feedback.rating}/5` : '💬 Give Feedback'}
-                    </span>
-                  )}
+                  {grievance.status === 'resolved' && renderCompactFeedback(grievance)}
                 </div>
               )}
             </div>
@@ -324,7 +483,7 @@ const GrievanceList = ({ grievances, categories, compact = false, onViewDetails,
         )}
       </div>
 
-      {/* Pagination - Only show for non-compact view and when there are multiple pages */}
+      {/* Pagination */}
       {renderPagination()}
 
       {compact && sortedGrievances.length > 3 && (

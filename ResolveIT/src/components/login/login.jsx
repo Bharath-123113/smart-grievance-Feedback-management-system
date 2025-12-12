@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './login.css';
 
@@ -9,7 +9,8 @@ const Login = (props) => {
     userType: 'student',
     firstName: '',
     lastName: '',
-    email: ''
+    email: '',
+    departmentId: ''  // ADDED: For staff/admin department selection
   });
 
   const [message, setMessage] = useState('');
@@ -18,12 +19,67 @@ const Login = (props) => {
   const [activeTab, setActiveTab] = useState('login');
   const [showRegistrationForm, setShowRegistrationForm] = useState(false);
   const [newUserData, setNewUserData] = useState(null);
+  
+  // State for departments
+  const [departments, setDepartments] = useState([]);
+  const [loadingDepartments, setLoadingDepartments] = useState(false);
+  const [savingProfile, setSavingProfile] = useState(false);
 
   // Map your frontend roles to backend roles
   const roleMapping = {
     'student': 'student',
     'staff': 'staff',
-    'admin': 'department_admin'
+    'admin': 'admin'
+  };
+
+  // Fetch departments when registration form OR signup form is shown
+  useEffect(() => {
+    if (showRegistrationForm || activeTab === 'signup') {
+      fetchDepartments();
+    }
+  }, [showRegistrationForm, activeTab]);
+
+  const fetchDepartments = async () => {
+    try {
+      setLoadingDepartments(true);
+      const token = localStorage.getItem('token');
+      
+      // Try to fetch departments with token if available
+      // Otherwise fetch without token (for signup page)
+      let response;
+      if (token) {
+        response = await axios.get('http://localhost:8080/api/dashboard/student/departments', {
+          headers: { 
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+      } else {
+        // For signup page, try without token or use a public endpoint
+        response = await axios.get('http://localhost:8080/api/dashboard/student/departments');
+      }
+      
+      console.log('Departments fetched:', response.data);
+      setDepartments(response.data);
+    } catch (error) {
+      console.error('Error fetching departments:', error);
+      // Fallback to hardcoded departments
+      setDepartments([
+        { id: 1, departmentName: 'Computer Science', departmentCode: 'CSE' },
+        { id: 2, departmentName: 'Infrastructure', departmentCode: 'INFRA' },
+        { id: 3, departmentName: 'Administration', departmentCode: 'ADMIN' },
+        { id: 4, departmentName: 'Electronics & Communication Engineering', departmentCode: 'ECE' },
+        { id: 5, departmentName: 'Electrical & Electronics Engineering', departmentCode: 'EEE' },
+        { id: 6, departmentName: 'Mechanical Engineering', departmentCode: 'MECH' },
+        { id: 7, departmentName: 'Civil Engineering', departmentCode: 'CIVIL' },
+        { id: 8, departmentName: 'AI & Data Science', departmentCode: 'AIDS' },
+        { id: 9, departmentName: 'Computer Science & Business Systems', departmentCode: 'CSBS' },
+        { id: 10, departmentName: 'Information Technology', departmentCode: 'IT' },
+        { id: 11, departmentName: 'AI & Machine Learning', departmentCode: 'AIML' }
+      ]);
+    } finally {
+      setLoadingDepartments(false);
+    }
   };
 
   const handleInputChange = (e) => {
@@ -53,44 +109,47 @@ const Login = (props) => {
 
       // Call Spring Boot backend
       const response = await axios.post('http://localhost:8080/api/auth/login', loginData);
+      
+      console.log('🔐 Full backend login response:', response.data);
 
       if (response.data.token) {
         setMessage(`🎉 Login Successful! Welcome ${response.data.firstName}`);
         setMessageType('success');
 
-        // Store user data
+        // Store user data - FIXED: Default profileCompleted to false, not true
         const userData = {
           email: response.data.email,
           userType: response.data.role,
           first_name: response.data.firstName,
           last_name: response.data.lastName,
           userId: response.data.userId,
-          profileCompleted: true,
+          // FIXED: Default to false if not provided
+          profileCompleted: response.data.profileCompleted !== undefined ? 
+                          response.data.profileCompleted : false,
           token: response.data.token,
         };
+
+        console.log('📝 Setting user profileCompleted to:', userData.profileCompleted);
 
         // Store token for future API calls
         localStorage.setItem('token', response.data.token);
         localStorage.setItem('user', JSON.stringify(userData));
         localStorage.setItem('currentUser', JSON.stringify(userData));
 
-        // ROLE-BASED REDIRECT
-        const userRole = response.data.role;
-        console.log('User role:', userRole);
-        
-        if (userRole === 'student') {
-          window.location.href = '/student-dashboard';
-        } else if (userRole === 'staff') {
-          window.location.href = '/staff-dashboard';
-        } else if (userRole === 'department_admin' || userRole === 'super_admin') {
-          window.location.href = '/admin-dashboard';
-        } else {
-          window.location.href = '/student-dashboard';
-        }
-
+        // ALWAYS call props.onLogin - let App.js handle registration
         if (props.onLogin) {
+          console.log('📤 Sending user data to App.js:', {
+            email: userData.email,
+            profileCompleted: userData.profileCompleted,
+            userType: userData.userType
+          });
           props.onLogin(userData);
         }
+
+        // ROLE-BASED LOGGING (no redirection logic here)
+        const userRole = response.data.role;
+        console.log('✅ Login processed for role:', userRole);
+        
       }
     } catch (error) {
       console.error('Login error:', error);
@@ -100,17 +159,6 @@ const Login = (props) => {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const getDepartmentName = (departmentKey) => {
-    const departments = {
-      'academic': 'Academic Department',
-      'administrative': 'Administrative Department',
-      'infrastructure': 'Infrastructure Department',
-      'library': 'Library Department',
-      'computer_science': 'Computer Science Department'
-    };
-    return departments[departmentKey] || departmentKey;
   };
 
   const handleForgotPassword = (e) => {
@@ -135,25 +183,43 @@ const Login = (props) => {
     setMessage('');
 
     try {
-      const { firstName, lastName, username, email, userType, password } = formData;
+      const { firstName, lastName, username, email, userType, password, departmentId } = formData;
 
       // Convert frontend role to backend role
       const backendRole = roleMapping[userType];
 
+      // Determine departmentId based on role
+      let deptId;
+      
+      if (userType === 'student') {
+        // Students get department later in registration form
+        deptId = 1; // Default for student signup
+      } else if (userType === 'staff' || userType === 'admin') {
+        // Staff/Admin must select department during signup
+        if (!departmentId) {
+          setMessage('❌ Please select a department for staff/admin account');
+          setMessageType('error');
+          setIsLoading(false);
+          return;
+        }
+        deptId = parseInt(departmentId);
+      } else {
+        deptId = 1; // Default fallback
+      }
+
       const signupData = {
         firstName: firstName,
         lastName: lastName,
-        username: username, // User chooses their own username
+        username: username,
         email: email,
         password: password,
         role: backendRole,
         phone: '',
-        departmentId: 1
+        departmentId: deptId  // Use determined departmentId
       };
 
       console.log('🔄 Sending signup request:', signupData);
 
-      // Call Spring Boot signup API
       const response = await axios.post('http://localhost:8080/api/auth/signup', signupData);
       
       console.log('✅ Signup response:', response.data);
@@ -166,23 +232,22 @@ const Login = (props) => {
 🔐 **Your Login Details:**
 **Username:** ${username}
 **Role:** ${userType}
+**Department:** ${departments.find(d => d.id === deptId)?.departmentName || 'Not specified'}
 
 🔄 Auto-logging you in now...`);
         setMessageType('success');
 
-        // Wait 3 seconds to let user read the message, then auto-login
         setTimeout(async () => {
           try {
-            // Auto-login after successful signup using the chosen username
             const loginData = {
               username: username,
               password: password,
               role: backendRole
             };
 
-            console.log('🔄 Auto-login with username:', loginData);
-
             const loginResponse = await axios.post('http://localhost:8080/api/auth/login', loginData);
+            
+            console.log('🔐 Auto-login response:', loginResponse.data);
             
             if (loginResponse.data.token) {
               const userData = {
@@ -191,34 +256,36 @@ const Login = (props) => {
                 first_name: loginResponse.data.firstName,
                 last_name: loginResponse.data.lastName,
                 userId: loginResponse.data.userId,
-                profileCompleted: userType === 'student' ? false : true,
+                // FIXED: Default to false if not provided
+                profileCompleted: loginResponse.data.profileCompleted !== undefined ? 
+                                loginResponse.data.profileCompleted : false,
                 token: loginResponse.data.token,
               };
 
-              // Store user data
+              console.log('📝 Auto-login user profileCompleted:', userData.profileCompleted);
+
               localStorage.setItem('token', loginResponse.data.token);
               localStorage.setItem('user', JSON.stringify(userData));
               localStorage.setItem('currentUser', JSON.stringify(userData));
 
-              // Redirect based on role
-              const userRole = loginResponse.data.role;
-              if (userRole === 'student') {
-                // Show student registration form
-                setNewUserData(userData);
-                setShowRegistrationForm(true);
-              } else if (userRole === 'staff') {
-                window.location.href = '/staff-dashboard';
-              } else if (userRole === 'department_admin') {
-                window.location.href = '/admin-dashboard';
+              // ALWAYS call props.onLogin for signup auto-login
+              if (props.onLogin) {
+                console.log('📤 Signup auto-login sending to App.js:', {
+                  email: userData.email,
+                  profileCompleted: userData.profileCompleted,
+                  userType: userData.userType
+                });
+                props.onLogin(userData);
               }
+
+              console.log('✅ Signup completed, user data sent to App.js');
             }
           } catch (loginError) {
             console.error('Auto-login failed:', loginError);
             setMessage(`✅ Account created but auto-login failed. Please login manually with username: ${username}`);
             setIsLoading(false);
           }
-        }, 3000); // 3 second delay
-
+        }, 3000);
       }
     } catch (error) {
       console.error('Signup error:', error);
@@ -230,22 +297,113 @@ const Login = (props) => {
   };
 
   // Handle registration form completion
-  const handleRegistrationComplete = (registrationData) => {
-    const completeUser = {
-      ...newUserData,
-      ...registrationData,
-      profileCompleted: true,
-      department_name: getDepartmentName(registrationData.department)
-    };
-
-    // Update user data in localStorage
-    localStorage.setItem('currentUser', JSON.stringify(completeUser));
-    
-    // Redirect to student dashboard
-    window.location.href = '/student-dashboard';
-
-    if (props.onLogin) {
-      props.onLogin(completeUser);
+  const handleRegistrationComplete = async () => {
+    try {
+      setSavingProfile(true);
+      
+      // Get form values
+      const student_id = document.querySelector('[name="student_id"]').value;
+      const phone = document.querySelector('[name="phone"]').value;
+      const address = document.querySelector('[name="address"]').value;
+      const academic_year = document.querySelector('[name="academic_year"]').value;
+      const program = document.querySelector('[name="program"]').value;
+      const semester = document.querySelector('[name="semester"]').value;
+      const gpa = document.querySelector('[name="gpa"]').value;
+      const department_id = document.querySelector('[name="department_id"]').value;
+      
+      const registrationData = {
+        student_id,
+        phone,
+        address,
+        academic_year,
+        program,
+        semester,
+        gpa,
+        department_id
+      };
+      
+      console.log('📝 Registration data:', registrationData);
+      
+      // Get the token from localStorage
+      const token = localStorage.getItem('token');
+      if (!token) {
+        alert('Session expired. Please login again.');
+        setSavingProfile(false);
+        return;
+      }
+      
+      // Validate GPA
+      const gpaNum = parseFloat(gpa);
+      if (isNaN(gpaNum) || gpaNum < 0 || gpaNum > 10) {
+        alert('Please enter a valid GPA between 0 and 10');
+        setSavingProfile(false);
+        return;
+      }
+      
+      // Validate required fields
+      if (!student_id.trim()) {
+        alert('Please enter your Student ID');
+        setSavingProfile(false);
+        return;
+      }
+      
+      if (!department_id) {
+        alert('Please select a department');
+        setSavingProfile(false);
+        return;
+      }
+      
+      // Prepare data for backend API
+      const profileData = {
+        enrollmentNumber: student_id || '',
+        phone: phone || '',
+        address: address || '',
+        academicYear: academic_year || '2024-2025',
+        program: program || 'Bachelor of Technology',
+        semester: semester ? parseInt(semester) : 4,
+        gpa: gpaNum,
+        firstName: newUserData?.first_name || '',
+        lastName: newUserData?.last_name || '',
+        email: newUserData?.email || '',
+        departmentId: parseInt(department_id)
+      };
+      
+      console.log('📤 Sending to backend API:', profileData);
+      
+      // Call backend API
+      const response = await axios.put(
+        'http://localhost:8080/api/dashboard/student/profile',
+        profileData,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      
+      console.log('✅ Registration data saved:', response.data);
+      
+      // Complete the setup
+      const completeUser = {
+        ...newUserData,
+        ...registrationData,
+        profileCompleted: true
+      };
+      
+      localStorage.setItem('currentUser', JSON.stringify(completeUser));
+      
+      // Notify parent component (App.js)
+      if (props.onLogin) {
+        console.log('✅ Registration complete - calling onLogin with complete user');
+        props.onLogin(completeUser);
+      }
+      
+    } catch (error) {
+      console.error('❌ Error saving registration data:', error);
+      alert('Failed to save profile. Please try again.');
+    } finally {
+      setSavingProfile(false);
     }
   };
 
@@ -337,32 +495,32 @@ const Login = (props) => {
 
             <div className="form-group">
               <label>Current GPA *</label>
-              <select className="form-input" name="gpa" required>
-                <option value="4.0">4.0</option>
-                <option value="3.75">3.75</option>
-                <option value="3.5">3.5</option>
-                <option value="3.25">3.25</option>
-                <option value="3.0">3.0</option>
-                <option value="2.75">2.75</option>
-                <option value="2.5">2.5</option>
-                <option value="2.25">2.25</option>
-                <option value="2.0">2.0</option>
-              </select>
+              <input
+                type="text"
+                name="gpa"
+                placeholder="Enter your GPA (0-10)"
+                className="form-input"
+                required
+              />
             </div>
           </div>
 
           <div className="form-group">
             <label>Department *</label>
-            <select className="form-input" name="department" required>
-              <option value="computer_science">Computer Science</option>
-              <option value="electrical_engineering">Electrical Engineering</option>
-              <option value="mechanical_engineering">Mechanical Engineering</option>
-              <option value="civil_engineering">Civil Engineering</option>
-              <option value="mathematics">Mathematics</option>
-              <option value="physics">Physics</option>
-              <option value="chemistry">Chemistry</option>
-              <option value="business_administration">Business Administration</option>
-            </select>
+            {loadingDepartments ? (
+              <select className="form-input" disabled>
+                <option>Loading departments...</option>
+              </select>
+            ) : (
+              <select className="form-input" name="department_id" required>
+                <option value="">Select Department</option>
+                {departments.map(dept => (
+                  <option key={dept.id} value={dept.id}>
+                    {dept.departmentName} ({dept.departmentCode})
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
         </div>
 
@@ -370,24 +528,10 @@ const Login = (props) => {
           <button
             type="button"
             className="submit-btn"
-            onClick={() => {
-              const registrationData = {
-                student_id: document.querySelector('[name="student_id"]').value,
-                phone: document.querySelector('[name="phone"]').value,
-                address: document.querySelector('[name="address"]').value,
-                academic_year: document.querySelector('[name="academic_year"]').value,
-                program: document.querySelector('[name="program"]').value,
-                semester: document.querySelector('[name="semester"]').value,
-                gpa: document.querySelector('[name="gpa"]').value,
-                department: document.querySelector('[name="department"]').value,
-                registration_date: new Date().toISOString(),
-                member_since: new Date().toISOString(),
-                account_status: 'Active'
-              };
-              handleRegistrationComplete(registrationData);
-            }}
+            onClick={handleRegistrationComplete}
+            disabled={savingProfile}
           >
-            Complete Registration & Continue
+            {savingProfile ? '🔄 Saving...' : 'Complete Registration & Continue'}
           </button>
         </div>
       </form>
@@ -407,8 +551,6 @@ const Login = (props) => {
           onChange={handleInputChange}
           required
         />
-        <small className="input-hint">
-        </small>
       </div>
 
       <div className="form-group">
@@ -563,6 +705,33 @@ const Login = (props) => {
           <option value="admin">Administrator</option>
         </select>
       </div>
+
+      {/* ADDED: Department selection for staff/admin */}
+      {(formData.userType === 'staff' || formData.userType === 'admin') && (
+        <div className="form-group">
+          <label>Department *</label>
+          {loadingDepartments ? (
+            <select className="form-input" disabled>
+              <option>Loading departments...</option>
+            </select>
+          ) : (
+            <select
+              className="form-input"
+              name="departmentId"
+              value={formData.departmentId || ''}
+              onChange={handleInputChange}
+              required
+            >
+              <option value="">Select Department</option>
+              {departments.map(dept => (
+                <option key={dept.id} value={dept.id}>
+                  {dept.departmentName} ({dept.departmentCode})
+                </option>
+              ))}
+            </select>
+          )}
+        </div>
+      )}
 
       <button
         type="submit"
